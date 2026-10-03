@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { getProjects } from '../api/client';
 import { Project } from '../api/types';
 import { deriveSectionName } from '../section';
@@ -12,7 +12,8 @@ export default function QueuePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [craftFilter, setCraftFilter] = useState('all');
-  const [designerFilter, setDesignerFilter] = useState('all');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const designerFilter = searchParams.get('designer') ?? 'all';
 
   useEffect(() => {
     getProjects()
@@ -82,7 +83,10 @@ export default function QueuePage() {
             </option>
           ))}
         </select>
-        <select value={designerFilter} onChange={(e) => setDesignerFilter(e.target.value)}>
+        <select
+          value={designerFilter}
+          onChange={(e) => setSearchParams(e.target.value === 'all' ? {} : { designer: e.target.value })}
+        >
           <option value="all">All designers</option>
           {designers.map((d) => (
             <option key={d} value={d}>

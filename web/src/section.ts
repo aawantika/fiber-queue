@@ -11,7 +11,8 @@
 // garments under "Sweater"). Collapse those specific leaves back to their
 // parent; everything else keeps the capped-depth leaf as-is.
 const SECTION_OVERRIDES: Record<string, string> = {
-  'Sleeveless Top': 'Tops'
+  'Sleeveless Top': 'Tops',
+  Tee: 'Tops'
 };
 
 export function deriveSectionName(category: string | null): string {

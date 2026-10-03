@@ -4,7 +4,8 @@
 // Capping at the 4th segment collapses that extra sock-cut level back to
 // "Socks" while leaving normal 4-level paths (Pullover, Cardigan) untouched.
 const SECTION_OVERRIDES: Record<string, string> = {
-  'Sleeveless Top': 'Tops'
+  'Sleeveless Top': 'Tops',
+  Tee: 'Tops'
 };
 
 export function deriveSectionName(category: string | null): string | null {

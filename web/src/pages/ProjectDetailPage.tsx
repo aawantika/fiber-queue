@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
 import { deriveSectionName } from '../section';
@@ -302,7 +302,16 @@ export default function ProjectDetailPage() {
             <>
               <div className="spec-row"><span className="label">Category</span><span>{deriveSectionName(project.category)}</span></div>
               <div className="spec-row"><span className="label">Craft</span><span>{project.craft ?? '—'}</span></div>
-              <div className="spec-row"><span className="label">Designer</span><span>{project.designer ?? '—'}</span></div>
+              <div className="spec-row">
+                <span className="label">Designer</span>
+                <span>
+                  {project.designer ? (
+                    <Link to={`/?designer=${encodeURIComponent(project.designer)}`}>{project.designer}</Link>
+                  ) : (
+                    '—'
+                  )}
+                </span>
+              </div>
               <div className="spec-row"><span className="label">Weight</span><span>{weightClassLabel(project.weightClass)} {project.weightLabel ? `(${project.weightLabel})` : ''}</span></div>
               <div className="spec-row"><span className="label">Yardage</span><span>{project.yardageMin ?? '?'}–{project.yardageMax ?? '?'} yd</span></div>
               <div className="spec-row"><span className="label">Sizes available</span><span>{project.sizesAvailable ?? '—'}</span></div>
