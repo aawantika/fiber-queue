@@ -13,6 +13,7 @@ export interface Project {
   ravelryId: number | null;
   ravelryPermalink: string | null;
   ravelryUrl: string | null;
+  patternUrl: string | null;
   yardageMin: number | null;
   yardageMax: number | null;
   yardageBySize: string | null;
@@ -21,6 +22,7 @@ export interface Project {
   weightClass: number | null;
   needleSizes: string | null;
   hookSizes: string | null;
+  gauge: string | null;
   suggestedYarn: string | null;
   published: string | null;
   imagePath: string | null;
@@ -79,8 +81,10 @@ export interface ManualProjectInput {
   weightClass?: number | null;
   needleSizes?: string | null;
   hookSizes?: string | null;
+  gauge?: string | null;
   suggestedYarn?: string | null;
   published?: string | null;
+  patternUrl?: string | null;
   imageSourceUrl?: string | null;
   notes?: string | null;
 }

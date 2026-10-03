@@ -30,8 +30,10 @@ const manualProjectSchema = z.object({
   weightClass: z.number().int().min(0).max(6).nullable().optional(),
   needleSizes: z.string().nullable().optional(),
   hookSizes: z.string().nullable().optional(),
+  gauge: z.string().nullable().optional(),
   suggestedYarn: z.string().nullable().optional(),
   published: z.string().nullable().optional(),
+  patternUrl: z.string().url().nullable().optional(),
   imageSourceUrl: z.string().url().nullable().optional(),
   notes: z.string().nullable().optional()
 });
@@ -48,6 +50,7 @@ function fillDefaults(partial: Partial<ProjectInput>): ProjectInput {
     ravelryId: partial.ravelryId ?? null,
     ravelryPermalink: partial.ravelryPermalink ?? null,
     ravelryUrl: partial.ravelryUrl ?? null,
+    patternUrl: partial.patternUrl ?? null,
     yardageMin: partial.yardageMin ?? null,
     yardageMax: partial.yardageMax ?? null,
     yardageBySize: partial.yardageBySize ?? null,
@@ -56,6 +59,7 @@ function fillDefaults(partial: Partial<ProjectInput>): ProjectInput {
     weightClass: partial.weightClass ?? null,
     needleSizes: partial.needleSizes ?? null,
     hookSizes: partial.hookSizes ?? null,
+    gauge: partial.gauge ?? null,
     suggestedYarn: partial.suggestedYarn ?? null,
     published: partial.published ?? null,
     imagePath: partial.imagePath ?? null,
@@ -135,6 +139,30 @@ projectsRouter.put('/:id', async (req, res) => {
   }
 
   res.json(updateProject(id, input));
+});
+
+// Re-pulls spec fields (yardage, weight, needle/hook sizes, gauge, photo...)
+// from Ravelry without disturbing what's yours: status, pattern_status,
+// notes, and yardage_by_size survive the refresh untouched.
+projectsRouter.post('/:id/refresh', async (req, res) => {
+  const id = Number(req.params.id);
+  const existing = getProjectById(id);
+  if (!existing) return res.status(404).json({ error: 'Project not found' });
+  if (!existing.ravelryUrl) return res.status(400).json({ error: 'Project has no Ravelry link to refresh from' });
+
+  try {
+    const fresh = await fetchProjectFromRavelryUrl(existing.ravelryUrl);
+    const input = fillDefaults({
+      ...fresh,
+      status: existing.status,
+      patternStatus: existing.patternStatus,
+      notes: existing.notes,
+      yardageBySize: existing.yardageBySize
+    });
+    res.json(updateProject(id, input));
+  } catch (err) {
+    res.status(502).json({ error: err instanceof Error ? err.message : 'Ravelry refresh failed' });
+  }
 });
 
 projectsRouter.delete('/:id', (req, res) => {

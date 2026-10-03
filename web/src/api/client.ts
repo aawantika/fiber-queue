@@ -40,6 +40,10 @@ export function updateProject(id: number, input: ManualProjectInput): Promise<Pr
   return request<Project>(`/projects/${id}`, { method: 'PUT', body: JSON.stringify(input) });
 }
 
+export function refreshProjectFromRavelry(id: number): Promise<Project> {
+  return request<Project>(`/projects/${id}/refresh`, { method: 'POST' });
+}
+
 export function deleteProject(id: number): Promise<void> {
   return request<void>(`/projects/${id}`, { method: 'DELETE' });
 }

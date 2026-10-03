@@ -37,7 +37,11 @@ export default function AddProjectPage() {
     setManualBusy(true);
     setManualError(null);
     try {
-      const project = await addManualProject(manual);
+      const project = await addManualProject({
+        ...manual,
+        imageSourceUrl: manual.imageSourceUrl || null,
+        patternUrl: manual.patternUrl || null
+      });
       navigate(`/projects/${project.id}`);
     } catch (err) {
       setManualError(err instanceof Error ? err.message : 'Failed to add project');
@@ -135,6 +139,22 @@ export default function AddProjectPage() {
           <label>
             Hook size(s)
             <input value={manual.hookSizes ?? ''} onChange={(e) => field('hookSizes', e.target.value)} />
+          </label>
+          <label>
+            Gauge
+            <input
+              value={manual.gauge ?? ''}
+              onChange={(e) => field('gauge', e.target.value)}
+              placeholder="18 sts and 26 rows = 4 inches"
+            />
+          </label>
+          <label className="full">
+            Pattern link
+            <input
+              value={manual.patternUrl ?? ''}
+              onChange={(e) => field('patternUrl', e.target.value)}
+              placeholder="designer's site, PDF shop, etc."
+            />
           </label>
           <label>
             Sizes available

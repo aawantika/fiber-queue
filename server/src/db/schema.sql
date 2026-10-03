@@ -34,6 +34,11 @@ CREATE TABLE IF NOT EXISTS projects (
   ravelry_id INTEGER,
   ravelry_permalink TEXT,
   ravelry_url TEXT,
+  -- Generic "where to find this pattern" link, for patterns that aren't on
+  -- Ravelry at all (designer's own site, a PDF shop, etc). Set to ravelry_url
+  -- automatically when added via a Ravelry link, so the UI can show one link
+  -- regardless of source.
+  pattern_url TEXT,
   yardage_min REAL,
   yardage_max REAL,
   -- Free-text, user-filled: Ravelry only exposes a single yardage_min/max
@@ -46,6 +51,7 @@ CREATE TABLE IF NOT EXISTS projects (
   weight_class INTEGER,
   needle_sizes TEXT,
   hook_sizes TEXT,
+  gauge TEXT,
   suggested_yarn TEXT,
   published TEXT,
   image_path TEXT,

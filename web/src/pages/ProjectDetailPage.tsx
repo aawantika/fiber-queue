@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { deleteProject, getProject, updateProject } from '../api/client';
+import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail } from '../api/types';
 import { deriveSectionName } from '../section';
 import { weightClassLabel } from '../weightClass';
@@ -12,7 +12,12 @@ export default function ProjectDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [yardageBySize, setYardageBySize] = useState('');
   const [notes, setNotes] = useState('');
+  const [gauge, setGauge] = useState('');
+  const [patternUrl, setPatternUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [imageUrlInput, setImageUrlInput] = useState('');
+  const [imageSaving, setImageSaving] = useState(false);
+  const [imageError, setImageError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -21,22 +26,59 @@ export default function ProjectDetailPage() {
         setProject(p);
         setYardageBySize(p.yardageBySize ?? '');
         setNotes(p.notes ?? '');
+        setGauge(p.gauge ?? '');
+        setPatternUrl(p.patternUrl ?? '');
+        setImageUrlInput(p.imageSourceUrl ?? '');
       })
       .catch((err) => setError(err.message));
   }, [id]);
 
+  // imageSourceUrl/patternUrl are strict-URL-validated server-side; an empty
+  // string (field left blank) isn't a valid URL, so it has to become null,
+  // not "".
   async function patch(fields: Partial<ProjectDetail>) {
     if (!project) return;
-    const updated = await updateProject(project.id, { ...project, ...fields } as any);
+    const merged: any = { ...project, ...fields };
+    if (merged.imageSourceUrl === '') merged.imageSourceUrl = null;
+    if (merged.patternUrl === '') merged.patternUrl = null;
+    const updated = await updateProject(project.id, merged);
     setProject({ ...project, ...updated });
   }
 
   async function handleSaveNotes() {
     setSaving(true);
     try {
-      await patch({ yardageBySize, notes });
+      await patch({ yardageBySize, notes, gauge, patternUrl });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleUpdateImage() {
+    setImageSaving(true);
+    setImageError(null);
+    try {
+      await patch({ imageSourceUrl: imageUrlInput });
+    } catch (err) {
+      setImageError(err instanceof Error ? err.message : 'Failed to update image');
+    } finally {
+      setImageSaving(false);
+    }
+  }
+
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    if (!project) return;
+    setRefreshing(true);
+    try {
+      const updated = await refreshProjectFromRavelry(project.id);
+      setProject({ ...project, ...updated });
+      setGauge(updated.gauge ?? '');
+      setPatternUrl(updated.patternUrl ?? '');
+      setImageUrlInput(updated.imageSourceUrl ?? '');
+    } finally {
+      setRefreshing(false);
     }
   }
 
@@ -54,7 +96,21 @@ export default function ProjectDetailPage() {
     <div>
       <h1>{project.name}</h1>
       <div className="detail-layout">
-        {project.imagePath && <img className="detail-image" src={project.imagePath} alt={project.name} />}
+        <div>
+          {project.imagePath && <img className="detail-image" src={project.imagePath} alt={project.name} />}
+          <div style={{ display: 'flex', gap: 6, marginTop: 8, width: 280 }}>
+            <input
+              value={imageUrlInput}
+              onChange={(e) => setImageUrlInput(e.target.value)}
+              placeholder="paste image URL"
+              style={{ flex: 1 }}
+            />
+            <button className="secondary" onClick={handleUpdateImage} disabled={imageSaving}>
+              {imageSaving ? '…' : 'Update'}
+            </button>
+          </div>
+          {imageError && <p className="muted" style={{ color: 'var(--bad)' }}>{imageError}</p>}
+        </div>
 
         <div style={{ flex: 1, minWidth: 280 }}>
           <div className="spec-row">
@@ -85,14 +141,36 @@ export default function ProjectDetailPage() {
           <div className="spec-row"><span className="label">Sizes available</span><span>{project.sizesAvailable ?? '—'}</span></div>
           <div className="spec-row"><span className="label">Needle size(s)</span><span>{project.needleSizes ?? '—'}</span></div>
           <div className="spec-row"><span className="label">Hook size(s)</span><span>{project.hookSizes ?? '—'}</span></div>
+          <div className="spec-row"><span className="label">Gauge</span><span>{project.gauge ?? '—'}</span></div>
           <div className="spec-row"><span className="label">Suggested yarn</span><span>{project.suggestedYarn ?? '—'}</span></div>
           {project.ravelryUrl && (
             <div className="spec-row">
               <span className="label">Ravelry</span>
-              <a href={project.ravelryUrl} target="_blank" rel="noreferrer">open pattern ↗</a>
+              <a href={project.ravelryUrl} target="_blank" rel="noreferrer">open on Ravelry ↗</a>
+            </div>
+          )}
+          {project.patternUrl && project.patternUrl !== project.ravelryUrl && (
+            <div className="spec-row">
+              <span className="label">Pattern link</span>
+              <a href={project.patternUrl} target="_blank" rel="noreferrer">open pattern ↗</a>
             </div>
           )}
         </div>
+      </div>
+
+      <div className="section">
+        <h2>Gauge</h2>
+        <input value={gauge} onChange={(e) => setGauge(e.target.value)} style={{ width: '100%' }} />
+      </div>
+
+      <div className="section">
+        <h2>Pattern link</h2>
+        <input
+          value={patternUrl}
+          onChange={(e) => setPatternUrl(e.target.value)}
+          style={{ width: '100%' }}
+          placeholder="designer's site, PDF shop, etc."
+        />
       </div>
 
       <div className="section">
@@ -115,6 +193,11 @@ export default function ProjectDetailPage() {
         <button onClick={handleSaveNotes} disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </button>
+        {project.ravelryUrl && (
+          <button className="secondary" onClick={handleRefresh} disabled={refreshing}>
+            {refreshing ? 'Refreshing…' : 'Refresh from Ravelry'}
+          </button>
+        )}
         <button className="secondary" onClick={handleDelete}>
           Delete project
         </button>
