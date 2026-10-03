@@ -12,6 +12,7 @@ export default function QueuePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [craftFilter, setCraftFilter] = useState('all');
+  const [patternStatusFilter, setPatternStatusFilter] = useState('all');
   const [searchParams, setSearchParams] = useSearchParams();
   const designerFilter = searchParams.get('designer') ?? 'all';
 
@@ -42,6 +43,7 @@ export default function QueuePage() {
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     if (categoryFilter !== 'all' && deriveSectionName(p.category) !== categoryFilter) return false;
     if (craftFilter !== 'all' && p.craft !== craftFilter) return false;
+    if (patternStatusFilter !== 'all' && p.patternStatus !== patternStatusFilter) return false;
     if (designerFilter !== 'all' && p.designer !== designerFilter) return false;
     return true;
   });
@@ -77,6 +79,11 @@ export default function QueuePage() {
               {c}
             </option>
           ))}
+        </select>
+        <select value={patternStatusFilter} onChange={(e) => setPatternStatusFilter(e.target.value)}>
+          <option value="all">All projects</option>
+          <option value="have">Pattern: have</option>
+          <option value="need_to_buy">Pattern: need to buy</option>
         </select>
         <select
           value={designerFilter}
