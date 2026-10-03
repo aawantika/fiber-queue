@@ -48,14 +48,18 @@ export default function ProjectSections({ projects }: { projects: Project[] }) {
                     <span className={`badge ${p.patternStatus === 'have' ? 'good' : ''}`}>
                       {p.patternStatus === 'have' ? 'pattern: have' : 'pattern: need to buy'}
                     </span>
-                    {p.weightClass != null && <span className="badge">{weightClassLabel(p.weightClass)}</span>}
                     {p.needsReview && <span className="badge bad">needs fixing</span>}
-                    {p.hasYardageMatch != null && (
-                      <span className={`badge ${p.hasYardageMatch ? 'good' : 'bad'}`}>
-                        {p.hasYardageMatch ? 'yarn: possible' : 'yarn: short'}
-                      </span>
-                    )}
                   </div>
+                  {(p.weightClass != null || p.hasYardageMatch != null) && (
+                    <div style={{ whiteSpace: 'nowrap' }}>
+                      {p.weightClass != null && <span className="badge">{weightClassLabel(p.weightClass)}</span>}
+                      {p.hasYardageMatch != null && (
+                        <span className={`badge ${p.hasYardageMatch ? 'good' : 'bad'}`}>
+                          {p.hasYardageMatch ? 'yarn: possible' : 'yarn: short'}
+                        </span>
+                      )}
+                    </div>
+                  )}
                 </div>
               </Link>
             ))}
