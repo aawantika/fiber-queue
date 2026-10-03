@@ -43,6 +43,18 @@ export default function QueuePage() {
     return true;
   });
 
+  // Not alphabetical — "Uncategorized" always trails, and the rest follows
+  // a fixed preference order (garments roughly biggest/most-queued first).
+  // Anything that shows up later and isn't in the list falls in
+  // alphabetically before "Uncategorized" rather than disappearing.
+  const SECTION_ORDER = ['Tops', 'Cardigan', 'Pullover', 'Socks', 'Household'];
+
+  function sectionRank(name: string): number {
+    if (name === 'Uncategorized') return Infinity;
+    const i = SECTION_ORDER.indexOf(name);
+    return i === -1 ? SECTION_ORDER.length : i;
+  }
+
   const sections = useMemo(() => {
     const grouped = new Map<string, Project[]>();
     for (const p of filtered) {
@@ -50,7 +62,10 @@ export default function QueuePage() {
       grouped.set(section, [...(grouped.get(section) ?? []), p]);
     }
     for (const items of grouped.values()) items.sort((a, b) => a.name.localeCompare(b.name));
-    return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
+    return Array.from(grouped.entries()).sort(([a], [b]) => {
+      const rankDiff = sectionRank(a) - sectionRank(b);
+      return rankDiff !== 0 ? rankDiff : a.localeCompare(b);
+    });
   }, [filtered]);
 
   if (loading) return <p className="muted">Loading…</p>;
