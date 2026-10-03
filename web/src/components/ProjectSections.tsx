@@ -44,7 +44,7 @@ export default function ProjectSections({ projects }: { projects: Project[] }) {
                   <div className="name">{p.name}</div>
                   <div className="meta">{[p.craft, p.designer].filter(Boolean).join(' · ')}</div>
                   <div>
-                    <span className="badge">{p.status.replace('_', ' ')}</span>
+                    {p.status !== 'queue' && <span className="badge">{p.status.replace('_', ' ')}</span>}
                     <span className={`badge ${p.patternStatus === 'have' ? 'good' : ''}`}>
                       {p.patternStatus === 'have' ? 'pattern: have' : 'pattern: need to buy'}
                     </span>
