@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
+import { deriveSectionName } from '../section';
 import { WEIGHT_CLASS_OPTIONS, weightClassLabel } from '../weightClass';
 
 function MatchTable({ matches }: { matches: YarnMatchGroup[] }) {
@@ -39,6 +40,8 @@ export default function ProjectDetailPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editing, setEditing] = useState(false);
+
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [craft, setCraft] = useState('');
@@ -54,17 +57,23 @@ export default function ProjectDetailPage() {
   const [notes, setNotes] = useState('');
   const [gauge, setGauge] = useState('');
   const [patternUrl, setPatternUrl] = useState('');
-  const [components, setComponents] = useState<YarnComponent[]>([]);
-  const [saving, setSaving] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
+  const [components, setComponents] = useState<YarnComponent[]>([]);
+
+  const [saving, setSaving] = useState(false);
   const [imageSaving, setImageSaving] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Category is stored as the short derived section name going forward —
+  // Ravelry-sourced projects still carry their full "Categories > Clothing >
+  // Sweater > Pullover" breadcrumb underneath until edited/saved, so this
+  // normalizes it for editing instead of showing that raw breadcrumb in a
+  // small input.
   function syncLocalState(p: ProjectDetail) {
     setProject(p);
     setName(p.name);
-    setCategory(p.category ?? '');
+    setCategory(deriveSectionName(p.category));
     setCraft(p.craft ?? '');
     setDesigner(p.designer ?? '');
     setWeightClass(p.weightClass);
@@ -121,9 +130,15 @@ export default function ProjectDetailPage() {
         patternUrl,
         yarnComponents: JSON.stringify(components)
       });
+      setEditing(false);
     } finally {
       setSaving(false);
     }
+  }
+
+  function handleCancel() {
+    if (project) syncLocalState(project);
+    setEditing(false);
   }
 
   async function handleUpdateImage() {
@@ -165,11 +180,16 @@ export default function ProjectDetailPage() {
 
   return (
     <div>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={{ fontSize: 20, fontWeight: 700, width: '100%', border: 'none', background: 'transparent', padding: '4px 0', marginBottom: 16 }}
-      />
+      {editing ? (
+        <input
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          style={{ fontSize: 20, fontWeight: 700, width: '100%', border: 'none', background: 'transparent', padding: '4px 0', marginBottom: 16 }}
+        />
+      ) : (
+        <h1>{project.name}</h1>
+      )}
+
       <div className="detail-layout">
         <div>
           {project.imagePath && <img className="detail-image" src={project.imagePath} alt={project.name} />}
@@ -209,97 +229,117 @@ export default function ProjectDetailPage() {
             <input type="checkbox" checked={project.needsReview} onChange={(e) => patch({ needsReview: e.target.checked })} />
           </div>
           {project.patternFree && <div className="spec-row"><span className="label">Free pattern</span><span>yes</span></div>}
-          <div className="spec-row">
-            <span className="label">Category</span>
-            <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Cardigan, Socks, ..." style={{ textAlign: 'right' }} />
-          </div>
-          <div className="spec-row">
-            <span className="label">Craft</span>
-            <select value={craft} onChange={(e) => setCraft(e.target.value)}>
-              <option value="">—</option>
-              <option value="Knitting">Knitting</option>
-              <option value="Crochet">Crochet</option>
-              <option value="Both">Both</option>
-            </select>
-          </div>
-          <div className="spec-row">
-            <span className="label">Designer</span>
-            <input value={designer} onChange={(e) => setDesigner(e.target.value)} style={{ textAlign: 'right' }} />
-          </div>
-          <div className="spec-row">
-            <span className="label">Weight</span>
-            <select value={weightClass ?? ''} onChange={(e) => setWeightClass(e.target.value === '' ? null : Number(e.target.value))}>
-              <option value="">—</option>
-              {WEIGHT_CLASS_OPTIONS.map((o) => (
-                <option key={o.value} value={o.value}>
-                  {o.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div className="spec-row">
-            <span className="label">Yardage</span>
-            <span style={{ display: 'flex', gap: 6 }}>
-              <input type="number" value={yardageMin ?? ''} onChange={(e) => setYardageMin(e.target.value === '' ? null : Number(e.target.value))} placeholder="min" style={{ width: 70 }} />
-              <input type="number" value={yardageMax ?? ''} onChange={(e) => setYardageMax(e.target.value === '' ? null : Number(e.target.value))} placeholder="max" style={{ width: 70 }} />
-            </span>
-          </div>
-          <div className="spec-row">
-            <span className="label">Sizes available</span>
-            <input value={sizesAvailable} onChange={(e) => setSizesAvailable(e.target.value)} style={{ textAlign: 'right' }} />
-          </div>
-          <div className="spec-row">
-            <span className="label">Needle size(s)</span>
-            <input value={needleSizes} onChange={(e) => setNeedleSizes(e.target.value)} style={{ textAlign: 'right' }} />
-          </div>
-          <div className="spec-row">
-            <span className="label">Hook size(s)</span>
-            <input value={hookSizes} onChange={(e) => setHookSizes(e.target.value)} style={{ textAlign: 'right' }} />
-          </div>
-          <div className="spec-row"><span className="label">Gauge</span><span>{project.gauge ?? '—'}</span></div>
-          <div className="spec-row">
-            <span className="label">Suggested yarn</span>
-            <input value={suggestedYarn} onChange={(e) => setSuggestedYarn(e.target.value)} style={{ textAlign: 'right' }} />
-          </div>
+
+          {editing ? (
+            <>
+              <div className="spec-row">
+                <span className="label">Category</span>
+                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Cardigan, Socks, ..." style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Craft</span>
+                <select value={craft} onChange={(e) => setCraft(e.target.value)}>
+                  <option value="">—</option>
+                  <option value="Knitting">Knitting</option>
+                  <option value="Crochet">Crochet</option>
+                  <option value="Both">Both</option>
+                </select>
+              </div>
+              <div className="spec-row">
+                <span className="label">Designer</span>
+                <input value={designer} onChange={(e) => setDesigner(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Weight</span>
+                <select value={weightClass ?? ''} onChange={(e) => setWeightClass(e.target.value === '' ? null : Number(e.target.value))}>
+                  <option value="">—</option>
+                  {WEIGHT_CLASS_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>
+                      {o.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="spec-row">
+                <span className="label">Yardage</span>
+                <span style={{ display: 'flex', gap: 6 }}>
+                  <input type="number" value={yardageMin ?? ''} onChange={(e) => setYardageMin(e.target.value === '' ? null : Number(e.target.value))} placeholder="min" style={{ width: 70 }} />
+                  <input type="number" value={yardageMax ?? ''} onChange={(e) => setYardageMax(e.target.value === '' ? null : Number(e.target.value))} placeholder="max" style={{ width: 70 }} />
+                </span>
+              </div>
+              <div className="spec-row">
+                <span className="label">Sizes available</span>
+                <input value={sizesAvailable} onChange={(e) => setSizesAvailable(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Needle size(s)</span>
+                <input value={needleSizes} onChange={(e) => setNeedleSizes(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Hook size(s)</span>
+                <input value={hookSizes} onChange={(e) => setHookSizes(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Gauge</span>
+                <input value={gauge} onChange={(e) => setGauge(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Suggested yarn</span>
+                <input value={suggestedYarn} onChange={(e) => setSuggestedYarn(e.target.value)} style={{ textAlign: 'right' }} />
+              </div>
+              <div className="spec-row">
+                <span className="label">Pattern link</span>
+                <input
+                  value={patternUrl}
+                  onChange={(e) => setPatternUrl(e.target.value)}
+                  placeholder="designer's site, PDF shop, etc."
+                  style={{ textAlign: 'right' }}
+                />
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="spec-row"><span className="label">Category</span><span>{deriveSectionName(project.category)}</span></div>
+              <div className="spec-row"><span className="label">Craft</span><span>{project.craft ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Designer</span><span>{project.designer ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Weight</span><span>{weightClassLabel(project.weightClass)} {project.weightLabel ? `(${project.weightLabel})` : ''}</span></div>
+              <div className="spec-row"><span className="label">Yardage</span><span>{project.yardageMin ?? '?'}–{project.yardageMax ?? '?'} yd</span></div>
+              <div className="spec-row"><span className="label">Sizes available</span><span>{project.sizesAvailable ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Needle size(s)</span><span>{project.needleSizes ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Hook size(s)</span><span>{project.hookSizes ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Gauge</span><span>{project.gauge ?? '—'}</span></div>
+              <div className="spec-row"><span className="label">Suggested yarn</span><span>{project.suggestedYarn ?? '—'}</span></div>
+              {project.patternUrl && project.patternUrl !== project.ravelryUrl && (
+                <div className="spec-row">
+                  <span className="label">Pattern link</span>
+                  <a href={project.patternUrl} target="_blank" rel="noreferrer">open pattern ↗</a>
+                </div>
+              )}
+            </>
+          )}
+
           {project.ravelryUrl && (
             <div className="spec-row">
               <span className="label">Ravelry</span>
               <a href={project.ravelryUrl} target="_blank" rel="noreferrer">open on Ravelry ↗</a>
             </div>
           )}
-          {project.patternUrl && project.patternUrl !== project.ravelryUrl && (
-            <div className="spec-row">
-              <span className="label">Pattern link</span>
-              <a href={project.patternUrl} target="_blank" rel="noreferrer">open pattern ↗</a>
-            </div>
-          )}
         </div>
       </div>
 
       <div className="section">
-        <h2>Gauge</h2>
-        <input value={gauge} onChange={(e) => setGauge(e.target.value)} style={{ width: '100%' }} />
-      </div>
-
-      <div className="section">
-        <h2>Pattern link</h2>
-        <input
-          value={patternUrl}
-          onChange={(e) => setPatternUrl(e.target.value)}
-          style={{ width: '100%' }}
-          placeholder="designer's site, PDF shop, etc."
-        />
-      </div>
-
-      <div className="section">
         <h2>Yardage by size</h2>
-        <textarea
-          value={yardageBySize}
-          onChange={(e) => setYardageBySize(e.target.value)}
-          rows={2}
-          style={{ width: '100%' }}
-          placeholder="S: 525yd, M: 575yd, L: 640yd, XL: 700yd"
-        />
+        {editing ? (
+          <textarea
+            value={yardageBySize}
+            onChange={(e) => setYardageBySize(e.target.value)}
+            rows={2}
+            style={{ width: '100%' }}
+            placeholder="S: 525yd, M: 575yd, L: 640yd, XL: 700yd"
+          />
+        ) : (
+          <p className="muted">{project.yardageBySize || '—'}</p>
+        )}
       </div>
 
       {components.length > 0 && (
@@ -314,22 +354,26 @@ export default function ProjectDetailPage() {
               <span className="label">
                 {c.weightLabel ?? 'Unknown weight'} {c.yarnName ? `(${c.yarnName})` : ''}
               </span>
-              <span style={{ display: 'flex', gap: 6 }}>
-                <input
-                  type="number"
-                  value={c.yardageMin ?? ''}
-                  onChange={(e) => updateComponent(i, { yardageMin: e.target.value === '' ? null : Number(e.target.value) })}
-                  placeholder="min yd"
-                  style={{ width: 80 }}
-                />
-                <input
-                  type="number"
-                  value={c.yardageMax ?? ''}
-                  onChange={(e) => updateComponent(i, { yardageMax: e.target.value === '' ? null : Number(e.target.value) })}
-                  placeholder="max yd"
-                  style={{ width: 80 }}
-                />
-              </span>
+              {editing ? (
+                <span style={{ display: 'flex', gap: 6 }}>
+                  <input
+                    type="number"
+                    value={c.yardageMin ?? ''}
+                    onChange={(e) => updateComponent(i, { yardageMin: e.target.value === '' ? null : Number(e.target.value) })}
+                    placeholder="min yd"
+                    style={{ width: 80 }}
+                  />
+                  <input
+                    type="number"
+                    value={c.yardageMax ?? ''}
+                    onChange={(e) => updateComponent(i, { yardageMax: e.target.value === '' ? null : Number(e.target.value) })}
+                    placeholder="max yd"
+                    style={{ width: 80 }}
+                  />
+                </span>
+              ) : (
+                <span>{c.yardageMin ?? '?'}–{c.yardageMax ?? '?'} yd</span>
+              )}
             </div>
           ))}
         </div>
@@ -337,13 +381,26 @@ export default function ProjectDetailPage() {
 
       <div className="section">
         <h2>Notes</h2>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: '100%' }} />
+        {editing ? (
+          <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: '100%' }} />
+        ) : (
+          <p className="muted">{project.notes || '—'}</p>
+        )}
       </div>
 
       <div className="section" style={{ display: 'flex', gap: 8 }}>
-        <button onClick={handleSave} disabled={saving}>
-          {saving ? 'Saving…' : 'Save'}
-        </button>
+        {editing ? (
+          <>
+            <button onClick={handleSave} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+            <button className="secondary" onClick={handleCancel} disabled={saving}>
+              Cancel
+            </button>
+          </>
+        ) : (
+          <button onClick={() => setEditing(true)}>Edit</button>
+        )}
         {project.ravelryUrl && (
           <button className="secondary" onClick={handleRefresh} disabled={refreshing}>
             {refreshing ? 'Refreshing…' : 'Refresh from Ravelry'}

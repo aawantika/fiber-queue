@@ -1,5 +1,6 @@
 import type { ProjectInput } from '../db/projects.js';
 import { downloadImageFor } from './images.js';
+import { deriveSectionName } from './section.js';
 import { classFromRavelryName } from './weightClass.js';
 
 const API_KEY = process.env.RAVELRY_API_KEY;
@@ -56,7 +57,9 @@ export async function fetchProjectFromRavelryUrl(ravelryUrl: string): Promise<Pr
   const needles = (pattern.pattern_needle_sizes ?? []).filter((s: any) => s.knitting);
   const hooks = (pattern.pattern_needle_sizes ?? []).filter((s: any) => s.crochet);
 
-  const categories: string[] = (pattern.pattern_categories ?? []).map(categoryPath);
+  const categories: string[] = Array.from(
+    new Set((pattern.pattern_categories ?? []).map((c: any) => deriveSectionName(categoryPath(c))).filter(Boolean))
+  ) as string[];
   const suggestedYarn: string[] = (pattern.packs ?? [])
     .map((p: any) => p.yarn?.name && p.yarn?.yarn_company_name ? `${p.yarn.yarn_company_name} ${p.yarn.name}` : null)
     .filter(Boolean);

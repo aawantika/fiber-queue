@@ -42,6 +42,7 @@ export default function QueuePage() {
       const section = deriveSectionName(p.category);
       grouped.set(section, [...(grouped.get(section) ?? []), p]);
     }
+    for (const items of grouped.values()) items.sort((a, b) => a.name.localeCompare(b.name));
     return Array.from(grouped.entries()).sort(([a], [b]) => a.localeCompare(b));
   }, [filtered]);
 
