@@ -2,8 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
-import { deriveSectionName } from '../section';
-import { weightClassLabel } from '../weightClass';
+import { WEIGHT_CLASS_OPTIONS, weightClassLabel } from '../weightClass';
 
 function MatchTable({ matches }: { matches: YarnMatchGroup[] }) {
   if (matches.length === 0) return <p className="muted">Nothing in stash at this weight.</p>;
@@ -41,6 +40,16 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState('');
+  const [category, setCategory] = useState('');
+  const [craft, setCraft] = useState('');
+  const [designer, setDesigner] = useState('');
+  const [weightClass, setWeightClass] = useState<number | null>(null);
+  const [yardageMin, setYardageMin] = useState<number | null>(null);
+  const [yardageMax, setYardageMax] = useState<number | null>(null);
+  const [sizesAvailable, setSizesAvailable] = useState('');
+  const [needleSizes, setNeedleSizes] = useState('');
+  const [hookSizes, setHookSizes] = useState('');
+  const [suggestedYarn, setSuggestedYarn] = useState('');
   const [yardageBySize, setYardageBySize] = useState('');
   const [notes, setNotes] = useState('');
   const [gauge, setGauge] = useState('');
@@ -55,6 +64,16 @@ export default function ProjectDetailPage() {
   function syncLocalState(p: ProjectDetail) {
     setProject(p);
     setName(p.name);
+    setCategory(p.category ?? '');
+    setCraft(p.craft ?? '');
+    setDesigner(p.designer ?? '');
+    setWeightClass(p.weightClass);
+    setYardageMin(p.yardageMin);
+    setYardageMax(p.yardageMax);
+    setSizesAvailable(p.sizesAvailable ?? '');
+    setNeedleSizes(p.needleSizes ?? '');
+    setHookSizes(p.hookSizes ?? '');
+    setSuggestedYarn(p.suggestedYarn ?? '');
     setYardageBySize(p.yardageBySize ?? '');
     setNotes(p.notes ?? '');
     setGauge(p.gauge ?? '');
@@ -84,7 +103,24 @@ export default function ProjectDetailPage() {
   async function handleSave() {
     setSaving(true);
     try {
-      await patch({ name, yardageBySize, notes, gauge, patternUrl, yarnComponents: JSON.stringify(components) });
+      await patch({
+        name,
+        category: category || null,
+        craft: craft || null,
+        designer: designer || null,
+        weightClass,
+        yardageMin,
+        yardageMax,
+        sizesAvailable: sizesAvailable || null,
+        needleSizes: needleSizes || null,
+        hookSizes: hookSizes || null,
+        suggestedYarn: suggestedYarn || null,
+        yardageBySize,
+        notes,
+        gauge,
+        patternUrl,
+        yarnComponents: JSON.stringify(components)
+      });
     } finally {
       setSaving(false);
     }
@@ -173,19 +209,58 @@ export default function ProjectDetailPage() {
             <input type="checkbox" checked={project.needsReview} onChange={(e) => patch({ needsReview: e.target.checked })} />
           </div>
           {project.patternFree && <div className="spec-row"><span className="label">Free pattern</span><span>yes</span></div>}
-          <div className="spec-row"><span className="label">Category</span><span>{deriveSectionName(project.category)}</span></div>
-          <div className="spec-row"><span className="label">Craft</span><span>{project.craft ?? '—'}</span></div>
-          <div className="spec-row"><span className="label">Designer</span><span>{project.designer ?? '—'}</span></div>
-          <div className="spec-row"><span className="label">Weight</span><span>{weightClassLabel(project.weightClass)} {project.weightLabel ? `(${project.weightLabel})` : ''}</span></div>
+          <div className="spec-row">
+            <span className="label">Category</span>
+            <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Cardigan, Socks, ..." style={{ textAlign: 'right' }} />
+          </div>
+          <div className="spec-row">
+            <span className="label">Craft</span>
+            <select value={craft} onChange={(e) => setCraft(e.target.value)}>
+              <option value="">—</option>
+              <option value="Knitting">Knitting</option>
+              <option value="Crochet">Crochet</option>
+              <option value="Both">Both</option>
+            </select>
+          </div>
+          <div className="spec-row">
+            <span className="label">Designer</span>
+            <input value={designer} onChange={(e) => setDesigner(e.target.value)} style={{ textAlign: 'right' }} />
+          </div>
+          <div className="spec-row">
+            <span className="label">Weight</span>
+            <select value={weightClass ?? ''} onChange={(e) => setWeightClass(e.target.value === '' ? null : Number(e.target.value))}>
+              <option value="">—</option>
+              {WEIGHT_CLASS_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </div>
           <div className="spec-row">
             <span className="label">Yardage</span>
-            <span>{project.yardageMin ?? '?'}–{project.yardageMax ?? '?'} yd</span>
+            <span style={{ display: 'flex', gap: 6 }}>
+              <input type="number" value={yardageMin ?? ''} onChange={(e) => setYardageMin(e.target.value === '' ? null : Number(e.target.value))} placeholder="min" style={{ width: 70 }} />
+              <input type="number" value={yardageMax ?? ''} onChange={(e) => setYardageMax(e.target.value === '' ? null : Number(e.target.value))} placeholder="max" style={{ width: 70 }} />
+            </span>
           </div>
-          <div className="spec-row"><span className="label">Sizes available</span><span>{project.sizesAvailable ?? '—'}</span></div>
-          <div className="spec-row"><span className="label">Needle size(s)</span><span>{project.needleSizes ?? '—'}</span></div>
-          <div className="spec-row"><span className="label">Hook size(s)</span><span>{project.hookSizes ?? '—'}</span></div>
+          <div className="spec-row">
+            <span className="label">Sizes available</span>
+            <input value={sizesAvailable} onChange={(e) => setSizesAvailable(e.target.value)} style={{ textAlign: 'right' }} />
+          </div>
+          <div className="spec-row">
+            <span className="label">Needle size(s)</span>
+            <input value={needleSizes} onChange={(e) => setNeedleSizes(e.target.value)} style={{ textAlign: 'right' }} />
+          </div>
+          <div className="spec-row">
+            <span className="label">Hook size(s)</span>
+            <input value={hookSizes} onChange={(e) => setHookSizes(e.target.value)} style={{ textAlign: 'right' }} />
+          </div>
           <div className="spec-row"><span className="label">Gauge</span><span>{project.gauge ?? '—'}</span></div>
-          <div className="spec-row"><span className="label">Suggested yarn</span><span>{project.suggestedYarn ?? '—'}</span></div>
+          <div className="spec-row">
+            <span className="label">Suggested yarn</span>
+            <input value={suggestedYarn} onChange={(e) => setSuggestedYarn(e.target.value)} style={{ textAlign: 'right' }} />
+          </div>
           {project.ravelryUrl && (
             <div className="spec-row">
               <span className="label">Ravelry</span>
@@ -280,7 +355,9 @@ export default function ProjectDetailPage() {
       </div>
 
       <div className="section">
-        <h2>Combined weight — yarn that could work ({project.yarnMatches.length})</h2>
+        <h2>
+          {weightClassLabel(project.weightClass)} — yarn that could work ({project.yarnMatches.length})
+        </h2>
         {project.weightClass == null && <p className="muted">No weight set — can't match against stash.</p>}
         {project.weightClass != null && <MatchTable matches={project.yarnMatches} />}
       </div>
