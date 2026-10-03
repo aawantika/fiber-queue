@@ -1,0 +1,23 @@
+{
+  "name": "fiber-queue",
+  "private": true,
+  "version": "0.1.0",
+  "workspaces": [
+    "server",
+    "web"
+  ],
+  "scripts": {
+    "dev": "concurrently -n server,web -c blue,green \"npm run dev -w server\" \"npm run dev -w web\"",
+    "build": "npm run build -w web && npm run build -w server",
+    "migrate": "npm run migrate -w server"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.3"
+  },
+  "allowScripts": {
+    "better-sqlite3@12.11.1": true,
+    "esbuild@0.28.2": true,
+    "fsevents@2.3.3": true,
+    "esbuild@0.25.12": true
+  }
+}
