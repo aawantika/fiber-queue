@@ -1,7 +1,8 @@
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { addManualProject, addProjectFromRavelry } from '../api/client';
+import { addManualProject, addProjectFromRavelry, getProjects } from '../api/client';
 import { ManualProjectInput } from '../api/types';
+import { deriveSectionName } from '../section';
 import { WEIGHT_CLASS_OPTIONS } from '../weightClass';
 
 export default function AddProjectPage() {
@@ -9,6 +10,16 @@ export default function AddProjectPage() {
   const [ravelryUrl, setRavelryUrl] = useState('');
   const [ravelryBusy, setRavelryBusy] = useState(false);
   const [ravelryError, setRavelryError] = useState<string | null>(null);
+  const [knownCategories, setKnownCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    getProjects()
+      .then((all) => {
+        const names = Array.from(new Set(all.map((p) => deriveSectionName(p.category)))).sort((a, b) => a.localeCompare(b));
+        setKnownCategories(names);
+      })
+      .catch(() => {});
+  }, []);
 
   const [manual, setManual] = useState<ManualProjectInput>({
     name: '',
@@ -87,7 +98,12 @@ export default function AddProjectPage() {
           </label>
           <label>
             Category
-            <input value={manual.category ?? ''} onChange={(e) => field('category', e.target.value)} />
+            <input value={manual.category ?? ''} onChange={(e) => field('category', e.target.value)} list="category-options" />
+            <datalist id="category-options">
+              {knownCategories.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </label>
           <label>
             Craft
