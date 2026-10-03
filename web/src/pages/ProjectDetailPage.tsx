@@ -1,54 +1,90 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
-import { ProjectDetail } from '../api/types';
+import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
 import { deriveSectionName } from '../section';
 import { weightClassLabel } from '../weightClass';
+
+function MatchTable({ matches }: { matches: YarnMatchGroup[] }) {
+  if (matches.length === 0) return <p className="muted">Nothing in stash at this weight.</p>;
+  return (
+    <table>
+      <thead>
+        <tr>
+          <th>Brand</th>
+          <th>Colorway</th>
+          <th>Fiber</th>
+          <th>Total yards</th>
+          <th>Enough?</th>
+        </tr>
+      </thead>
+      <tbody>
+        {matches.map((m, i) => (
+          <tr key={i}>
+            <td>{m.brand}</td>
+            <td>{m.colorName ?? m.color ?? '—'}</td>
+            <td>{m.fiber ?? '—'}</td>
+            <td>{Math.round(m.totalYards)}</td>
+            <td>
+              {m.meetsMin === null ? '—' : <span className={`badge ${m.meetsMin ? 'good' : 'bad'}`}>{m.meetsMin ? 'enough' : 'short'}</span>}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState<ProjectDetail | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState('');
   const [yardageBySize, setYardageBySize] = useState('');
   const [notes, setNotes] = useState('');
   const [gauge, setGauge] = useState('');
   const [patternUrl, setPatternUrl] = useState('');
+  const [components, setComponents] = useState<YarnComponent[]>([]);
   const [saving, setSaving] = useState(false);
   const [imageUrlInput, setImageUrlInput] = useState('');
   const [imageSaving, setImageSaving] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  function syncLocalState(p: ProjectDetail) {
+    setProject(p);
+    setName(p.name);
+    setYardageBySize(p.yardageBySize ?? '');
+    setNotes(p.notes ?? '');
+    setGauge(p.gauge ?? '');
+    setPatternUrl(p.patternUrl ?? '');
+    setImageUrlInput(p.imageSourceUrl ?? '');
+    setComponents(p.componentMatches.map(({ matches, ...c }) => c));
+  }
 
   useEffect(() => {
     if (!id) return;
-    getProject(Number(id))
-      .then((p) => {
-        setProject(p);
-        setYardageBySize(p.yardageBySize ?? '');
-        setNotes(p.notes ?? '');
-        setGauge(p.gauge ?? '');
-        setPatternUrl(p.patternUrl ?? '');
-        setImageUrlInput(p.imageSourceUrl ?? '');
-      })
-      .catch((err) => setError(err.message));
+    getProject(Number(id)).then(syncLocalState).catch((err) => setError(err.message));
   }, [id]);
 
   // imageSourceUrl/patternUrl are strict-URL-validated server-side; an empty
   // string (field left blank) isn't a valid URL, so it has to become null,
-  // not "".
+  // not "". Re-fetches afterward rather than trusting the PUT response,
+  // since yarnMatches/componentMatches are only computed on GET.
   async function patch(fields: Partial<ProjectDetail>) {
     if (!project) return;
     const merged: any = { ...project, ...fields };
     if (merged.imageSourceUrl === '') merged.imageSourceUrl = null;
     if (merged.patternUrl === '') merged.patternUrl = null;
-    const updated = await updateProject(project.id, merged);
-    setProject({ ...project, ...updated });
+    await updateProject(project.id, merged);
+    syncLocalState(await getProject(project.id));
   }
 
-  async function handleSaveNotes() {
+  async function handleSave() {
     setSaving(true);
     try {
-      await patch({ yardageBySize, notes, gauge, patternUrl });
+      await patch({ name, yardageBySize, notes, gauge, patternUrl, yarnComponents: JSON.stringify(components) });
     } finally {
       setSaving(false);
     }
@@ -66,17 +102,12 @@ export default function ProjectDetailPage() {
     }
   }
 
-  const [refreshing, setRefreshing] = useState(false);
-
   async function handleRefresh() {
     if (!project) return;
     setRefreshing(true);
     try {
-      const updated = await refreshProjectFromRavelry(project.id);
-      setProject({ ...project, ...updated });
-      setGauge(updated.gauge ?? '');
-      setPatternUrl(updated.patternUrl ?? '');
-      setImageUrlInput(updated.imageSourceUrl ?? '');
+      await refreshProjectFromRavelry(project.id);
+      syncLocalState(await getProject(project.id));
     } finally {
       setRefreshing(false);
     }
@@ -89,12 +120,20 @@ export default function ProjectDetailPage() {
     navigate('/');
   }
 
+  function updateComponent(index: number, fields: Partial<YarnComponent>) {
+    setComponents((cs) => cs.map((c, i) => (i === index ? { ...c, ...fields } : c)));
+  }
+
   if (error) return <p className="muted">Error: {error}</p>;
   if (!project) return <p className="muted">Loading…</p>;
 
   return (
     <div>
-      <h1>{project.name}</h1>
+      <input
+        value={name}
+        onChange={(e) => setName(e.target.value)}
+        style={{ fontSize: 20, fontWeight: 700, width: '100%', border: 'none', background: 'transparent', padding: '4px 0', marginBottom: 16 }}
+      />
       <div className="detail-layout">
         <div>
           {project.imagePath && <img className="detail-image" src={project.imagePath} alt={project.name} />}
@@ -128,6 +167,10 @@ export default function ProjectDetailPage() {
               <option value="have">Have it</option>
               <option value="need_to_buy">Need to buy</option>
             </select>
+          </div>
+          <div className="spec-row">
+            <span className="label">Needs fixing</span>
+            <input type="checkbox" checked={project.needsReview} onChange={(e) => patch({ needsReview: e.target.checked })} />
           </div>
           {project.patternFree && <div className="spec-row"><span className="label">Free pattern</span><span>yes</span></div>}
           <div className="spec-row"><span className="label">Category</span><span>{deriveSectionName(project.category)}</span></div>
@@ -184,13 +227,46 @@ export default function ProjectDetailPage() {
         />
       </div>
 
+      {components.length > 0 && (
+        <div className="section">
+          <h2>Yarn held together — per strand</h2>
+          <p className="muted">
+            This pattern is worked with multiple strands held together. Fill in the yardage each strand needs (usually
+            in the designer's materials text, not a structured field) to match each one against stash separately.
+          </p>
+          {components.map((c, i) => (
+            <div key={i} className="spec-row" style={{ alignItems: 'center' }}>
+              <span className="label">
+                {c.weightLabel ?? 'Unknown weight'} {c.yarnName ? `(${c.yarnName})` : ''}
+              </span>
+              <span style={{ display: 'flex', gap: 6 }}>
+                <input
+                  type="number"
+                  value={c.yardageMin ?? ''}
+                  onChange={(e) => updateComponent(i, { yardageMin: e.target.value === '' ? null : Number(e.target.value) })}
+                  placeholder="min yd"
+                  style={{ width: 80 }}
+                />
+                <input
+                  type="number"
+                  value={c.yardageMax ?? ''}
+                  onChange={(e) => updateComponent(i, { yardageMax: e.target.value === '' ? null : Number(e.target.value) })}
+                  placeholder="max yd"
+                  style={{ width: 80 }}
+                />
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="section">
         <h2>Notes</h2>
         <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} style={{ width: '100%' }} />
       </div>
 
       <div className="section" style={{ display: 'flex', gap: 8 }}>
-        <button onClick={handleSaveNotes} disabled={saving}>
+        <button onClick={handleSave} disabled={saving}>
           {saving ? 'Saving…' : 'Save'}
         </button>
         {project.ravelryUrl && (
@@ -204,44 +280,23 @@ export default function ProjectDetailPage() {
       </div>
 
       <div className="section">
-        <h2>Yarn that could work ({project.yarnMatches.length})</h2>
+        <h2>Combined weight — yarn that could work ({project.yarnMatches.length})</h2>
         {project.weightClass == null && <p className="muted">No weight set — can't match against stash.</p>}
-        {project.weightClass != null && project.yarnMatches.length === 0 && (
-          <p className="muted">Nothing in stash at this weight ({weightClassLabel(project.weightClass)}).</p>
-        )}
-        {project.yarnMatches.length > 0 && (
-          <table>
-            <thead>
-              <tr>
-                <th>Brand</th>
-                <th>Colorway</th>
-                <th>Fiber</th>
-                <th>Total yards</th>
-                <th>Enough?</th>
-              </tr>
-            </thead>
-            <tbody>
-              {project.yarnMatches.map((m, i) => (
-                <tr key={i}>
-                  <td>{m.brand}</td>
-                  <td>{m.colorName ?? m.color ?? '—'}</td>
-                  <td>{m.fiber ?? '—'}</td>
-                  <td>{Math.round(m.totalYards)}</td>
-                  <td>
-                    {m.meetsMin === null ? (
-                      '—'
-                    ) : (
-                      <span className={`badge ${m.meetsMin ? 'good' : 'bad'}`}>
-                        {m.meetsMin ? 'enough' : 'short'}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
+        {project.weightClass != null && <MatchTable matches={project.yarnMatches} />}
       </div>
+
+      {project.componentMatches.map((c, i) => (
+        <div className="section" key={i}>
+          <h2>
+            {c.weightLabel ?? 'Unknown weight'} strand — yarn that could work ({c.matches.length})
+          </h2>
+          {c.weightClass == null ? (
+            <p className="muted">No weight on this strand — can't match against stash.</p>
+          ) : (
+            <MatchTable matches={c.matches} />
+          )}
+        </div>
+      ))}
     </div>
   );
 }

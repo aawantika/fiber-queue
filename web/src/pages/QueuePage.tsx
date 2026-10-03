@@ -97,6 +97,7 @@ export default function QueuePage() {
                       {p.patternStatus === 'have' ? 'pattern: have' : 'pattern: need to buy'}
                     </span>
                     {p.weightClass != null && <span className="badge">{weightClassLabel(p.weightClass)}</span>}
+                    {p.needsReview && <span className="badge bad">needs fixing</span>}
                     {p.hasYardageMatch != null && (
                       <span className={`badge ${p.hasYardageMatch ? 'good' : 'bad'}`}>
                         {p.hasYardageMatch ? 'yarn: possible' : 'yarn: short'}

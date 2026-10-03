@@ -31,6 +31,9 @@ CREATE TABLE IF NOT EXISTS projects (
   status TEXT NOT NULL DEFAULT 'queue' CHECK (status IN ('queue', 'in_progress', 'completed', 'frogged')),
   pattern_status TEXT NOT NULL DEFAULT 'need_to_buy' CHECK (pattern_status IN ('have', 'need_to_buy')),
   pattern_free INTEGER NOT NULL DEFAULT 0,
+  -- For entries pulled in from scattered notes (no Ravelry page to verify
+  -- against) with missing/guessed specs that need a human to confirm.
+  needs_review INTEGER NOT NULL DEFAULT 0,
   ravelry_id INTEGER,
   ravelry_permalink TEXT,
   ravelry_url TEXT,
@@ -52,6 +55,14 @@ CREATE TABLE IF NOT EXISTS projects (
   needle_sizes TEXT,
   hook_sizes TEXT,
   gauge TEXT,
+  -- For patterns worked with multiple strands held together (e.g. a lace +
+  -- a worsted held double to approximate an Aran gauge): JSON array of
+  -- {weightClass, weightLabel, yardageMin, yardageMax}, one entry per
+  -- strand, so each can be matched against stash independently of the
+  -- pattern's single combined yarn_weight/yardage fields above. Ravelry's
+  -- `packs` array reliably gives weight per strand; per-strand yardage is
+  -- usually only in free-text materials, so it's filled in by hand.
+  yarn_components TEXT,
   suggested_yarn TEXT,
   published TEXT,
   image_path TEXT,

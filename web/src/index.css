@@ -88,7 +88,7 @@ button {
   cursor: pointer;
   background: var(--accent);
   color: white;
-  border: none;
+  border: 1px solid transparent;
   font-weight: 600;
 }
 
@@ -181,7 +181,8 @@ button.secondary {
   font-size: 13px;
 }
 
-.spec-row .label { color: var(--muted); }
+.spec-row .label { color: var(--muted); flex-shrink: 0; margin-right: 12px; }
+.spec-row span:last-child { text-align: right; }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); }

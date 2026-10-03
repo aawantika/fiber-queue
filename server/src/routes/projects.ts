@@ -9,7 +9,7 @@ import {
   type ProjectInput
 } from '../db/projects.js';
 import { downloadImageFor } from '../services/images.js';
-import { matchYarnsForProject } from '../services/matching.js';
+import { matchYarnComponents, matchYarnsForProject } from '../services/matching.js';
 import { fetchProjectFromRavelryUrl } from '../services/ravelry.js';
 
 export const projectsRouter = Router();
@@ -22,6 +22,7 @@ const manualProjectSchema = z.object({
   status: z.enum(['queue', 'in_progress', 'completed', 'frogged']).default('queue'),
   patternStatus: z.enum(['have', 'need_to_buy']).default('need_to_buy'),
   patternFree: z.boolean().default(false),
+  needsReview: z.boolean().default(false),
   yardageMin: z.number().nullable().optional(),
   yardageMax: z.number().nullable().optional(),
   yardageBySize: z.string().nullable().optional(),
@@ -31,6 +32,7 @@ const manualProjectSchema = z.object({
   needleSizes: z.string().nullable().optional(),
   hookSizes: z.string().nullable().optional(),
   gauge: z.string().nullable().optional(),
+  yarnComponents: z.string().nullable().optional(),
   suggestedYarn: z.string().nullable().optional(),
   published: z.string().nullable().optional(),
   patternUrl: z.string().url().nullable().optional(),
@@ -47,6 +49,7 @@ function fillDefaults(partial: Partial<ProjectInput>): ProjectInput {
     status: partial.status ?? 'queue',
     patternStatus: partial.patternStatus ?? 'need_to_buy',
     patternFree: partial.patternFree ?? false,
+    needsReview: partial.needsReview ?? false,
     ravelryId: partial.ravelryId ?? null,
     ravelryPermalink: partial.ravelryPermalink ?? null,
     ravelryUrl: partial.ravelryUrl ?? null,
@@ -60,6 +63,7 @@ function fillDefaults(partial: Partial<ProjectInput>): ProjectInput {
     needleSizes: partial.needleSizes ?? null,
     hookSizes: partial.hookSizes ?? null,
     gauge: partial.gauge ?? null,
+    yarnComponents: partial.yarnComponents ?? null,
     suggestedYarn: partial.suggestedYarn ?? null,
     published: partial.published ?? null,
     imagePath: partial.imagePath ?? null,
@@ -82,7 +86,7 @@ projectsRouter.get('/:id', (req, res) => {
   const id = Number(req.params.id);
   const project = getProjectById(id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
-  res.json({ ...project, yarnMatches: matchYarnsForProject(project) });
+  res.json({ ...project, yarnMatches: matchYarnsForProject(project), componentMatches: matchYarnComponents(project) });
 });
 
 // Two ways in: { ravelryUrl } auto-fetches specs+photo from Ravelry; anything
@@ -143,7 +147,8 @@ projectsRouter.put('/:id', async (req, res) => {
 
 // Re-pulls spec fields (yardage, weight, needle/hook sizes, gauge, photo...)
 // from Ravelry without disturbing what's yours: status, pattern_status,
-// notes, and yardage_by_size survive the refresh untouched.
+// notes, yardage_by_size, and yarn_components (per-strand yardage you filled
+// in by hand) survive the refresh untouched.
 projectsRouter.post('/:id/refresh', async (req, res) => {
   const id = Number(req.params.id);
   const existing = getProjectById(id);
@@ -157,7 +162,8 @@ projectsRouter.post('/:id/refresh', async (req, res) => {
       status: existing.status,
       patternStatus: existing.patternStatus,
       notes: existing.notes,
-      yardageBySize: existing.yardageBySize
+      yardageBySize: existing.yardageBySize,
+      yarnComponents: existing.yarnComponents ?? fresh.yarnComponents
     });
     res.json(updateProject(id, input));
   } catch (err) {

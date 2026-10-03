@@ -8,6 +8,7 @@ export interface ProjectInput {
   status: 'queue' | 'in_progress' | 'completed' | 'frogged';
   patternStatus: 'have' | 'need_to_buy';
   patternFree: boolean;
+  needsReview: boolean;
   ravelryId: number | null;
   ravelryPermalink: string | null;
   ravelryUrl: string | null;
@@ -21,6 +22,7 @@ export interface ProjectInput {
   needleSizes: string | null;
   hookSizes: string | null;
   gauge: string | null;
+  yarnComponents: string | null;
   suggestedYarn: string | null;
   published: string | null;
   imagePath: string | null;
@@ -44,6 +46,7 @@ function rowToProject(row: any): Project {
     status: row.status,
     patternStatus: row.pattern_status,
     patternFree: Boolean(row.pattern_free),
+    needsReview: Boolean(row.needs_review),
     ravelryId: row.ravelry_id,
     ravelryPermalink: row.ravelry_permalink,
     ravelryUrl: row.ravelry_url,
@@ -57,6 +60,7 @@ function rowToProject(row: any): Project {
     needleSizes: row.needle_sizes,
     hookSizes: row.hook_sizes,
     gauge: row.gauge,
+    yarnComponents: row.yarn_components,
     suggestedYarn: row.suggested_yarn,
     published: row.published,
     imagePath: row.image_path,
@@ -78,19 +82,19 @@ export function getProjectById(id: number): Project | null {
 }
 
 const INSERT_COLUMNS = `
-  name, category, craft, designer, status, pattern_status, pattern_free, ravelry_id, ravelry_permalink, ravelry_url, pattern_url,
+  name, category, craft, designer, status, pattern_status, pattern_free, needs_review, ravelry_id, ravelry_permalink, ravelry_url, pattern_url,
   yardage_min, yardage_max, yardage_by_size, sizes_available, weight_label, weight_class,
-  needle_sizes, hook_sizes, gauge, suggested_yarn, published, image_path, image_source_url, notes
+  needle_sizes, hook_sizes, gauge, yarn_components, suggested_yarn, published, image_path, image_source_url, notes
 `;
 
 const INSERT_PARAMS = `
-  @name, @category, @craft, @designer, @status, @patternStatus, @patternFree, @ravelryId, @ravelryPermalink, @ravelryUrl, @patternUrl,
+  @name, @category, @craft, @designer, @status, @patternStatus, @patternFree, @needsReview, @ravelryId, @ravelryPermalink, @ravelryUrl, @patternUrl,
   @yardageMin, @yardageMax, @yardageBySize, @sizesAvailable, @weightLabel, @weightClass,
-  @needleSizes, @hookSizes, @gauge, @suggestedYarn, @published, @imagePath, @imageSourceUrl, @notes
+  @needleSizes, @hookSizes, @gauge, @yarnComponents, @suggestedYarn, @published, @imagePath, @imageSourceUrl, @notes
 `;
 
 function toRow(input: ProjectInput) {
-  return { ...input, patternFree: input.patternFree ? 1 : 0 };
+  return { ...input, patternFree: input.patternFree ? 1 : 0, needsReview: input.needsReview ? 1 : 0 };
 }
 
 export function createProject(input: ProjectInput): Project {
@@ -102,11 +106,11 @@ export function updateProject(id: number, input: ProjectInput): Project | null {
   db.prepare(
     `UPDATE projects SET
       name = @name, category = @category, craft = @craft, designer = @designer, status = @status,
-      pattern_status = @patternStatus, pattern_free = @patternFree,
+      pattern_status = @patternStatus, pattern_free = @patternFree, needs_review = @needsReview,
       ravelry_id = @ravelryId, ravelry_permalink = @ravelryPermalink, ravelry_url = @ravelryUrl, pattern_url = @patternUrl,
       yardage_min = @yardageMin, yardage_max = @yardageMax, yardage_by_size = @yardageBySize,
       sizes_available = @sizesAvailable, weight_label = @weightLabel, weight_class = @weightClass,
-      needle_sizes = @needleSizes, hook_sizes = @hookSizes, gauge = @gauge, suggested_yarn = @suggestedYarn,
+      needle_sizes = @needleSizes, hook_sizes = @hookSizes, gauge = @gauge, yarn_components = @yarnComponents, suggested_yarn = @suggestedYarn,
       published = @published, image_path = @imagePath, image_source_url = @imageSourceUrl, notes = @notes,
       updated_at = datetime('now')
      WHERE id = @id`

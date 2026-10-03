@@ -15,6 +15,8 @@ export function migrate(): void {
   db.exec(getSchemaSql());
   ensureColumn('projects', 'gauge', 'TEXT');
   ensureColumn('projects', 'pattern_url', 'TEXT');
+  ensureColumn('projects', 'needs_review', "INTEGER NOT NULL DEFAULT 0");
+  ensureColumn('projects', 'yarn_components', 'TEXT');
 }
 
 const isMain = process.argv[1] && import.meta.url === `file://${process.argv[1]}`;

@@ -10,6 +10,7 @@ export interface Project {
   status: ProjectStatus;
   patternStatus: PatternStatus;
   patternFree: boolean;
+  needsReview: boolean;
   ravelryId: number | null;
   ravelryPermalink: string | null;
   ravelryUrl: string | null;
@@ -23,6 +24,7 @@ export interface Project {
   needleSizes: string | null;
   hookSizes: string | null;
   gauge: string | null;
+  yarnComponents: string | null;
   suggestedYarn: string | null;
   published: string | null;
   imagePath: string | null;
@@ -47,8 +49,21 @@ export interface YarnMatchGroup {
   meetsMax: boolean | null;
 }
 
+export interface YarnComponent {
+  weightLabel: string | null;
+  weightClass: number | null;
+  yarnName: string | null;
+  yardageMin: number | null;
+  yardageMax: number | null;
+}
+
+export interface ComponentMatch extends YarnComponent {
+  matches: YarnMatchGroup[];
+}
+
 export interface ProjectDetail extends Project {
   yarnMatches: YarnMatchGroup[];
+  componentMatches: ComponentMatch[];
 }
 
 export interface Yarn {
@@ -73,6 +88,7 @@ export interface ManualProjectInput {
   status?: ProjectStatus;
   patternStatus?: PatternStatus;
   patternFree?: boolean;
+  needsReview?: boolean;
   yardageMin?: number | null;
   yardageMax?: number | null;
   yardageBySize?: string | null;
