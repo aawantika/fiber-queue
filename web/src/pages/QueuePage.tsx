@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { getProjects } from '../api/client';
+import ProjectSections from '../components/ProjectSections';
 import { Project } from '../api/types';
 import { deriveSectionName } from '../section';
-import { weightClassLabel } from '../weightClass';
 
 export default function QueuePage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -22,51 +22,29 @@ export default function QueuePage() {
       .finally(() => setLoading(false));
   }, []);
 
+  // Completed projects live in their own tab, not mixed into the queue.
+  const active = useMemo(() => projects.filter((p) => p.status !== 'completed'), [projects]);
+
   const categories = useMemo(
-    () => Array.from(new Set(projects.map((p) => deriveSectionName(p.category)))).sort((a, b) => a.localeCompare(b)),
-    [projects]
+    () => Array.from(new Set(active.map((p) => deriveSectionName(p.category)))).sort((a, b) => a.localeCompare(b)),
+    [active]
   );
   const crafts = useMemo(
-    () => Array.from(new Set(projects.map((p) => p.craft).filter(Boolean))) as string[],
-    [projects]
+    () => Array.from(new Set(active.map((p) => p.craft).filter(Boolean))) as string[],
+    [active]
   );
   const designers = useMemo(
-    () => (Array.from(new Set(projects.map((p) => p.designer).filter(Boolean))) as string[]).sort((a, b) => a.localeCompare(b)),
-    [projects]
+    () => (Array.from(new Set(active.map((p) => p.designer).filter(Boolean))) as string[]).sort((a, b) => a.localeCompare(b)),
+    [active]
   );
 
-  const filtered = projects.filter((p) => {
+  const filtered = active.filter((p) => {
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     if (categoryFilter !== 'all' && deriveSectionName(p.category) !== categoryFilter) return false;
     if (craftFilter !== 'all' && p.craft !== craftFilter) return false;
     if (designerFilter !== 'all' && p.designer !== designerFilter) return false;
     return true;
   });
-
-  // Not alphabetical — "Uncategorized" always trails, and the rest follows
-  // a fixed preference order (garments roughly biggest/most-queued first).
-  // Anything that shows up later and isn't in the list falls in
-  // alphabetically before "Uncategorized" rather than disappearing.
-  const SECTION_ORDER = ['Tops', 'Cardigan', 'Pullover', 'Socks', 'Household'];
-
-  function sectionRank(name: string): number {
-    if (name === 'Uncategorized') return Infinity;
-    const i = SECTION_ORDER.indexOf(name);
-    return i === -1 ? SECTION_ORDER.length : i;
-  }
-
-  const sections = useMemo(() => {
-    const grouped = new Map<string, Project[]>();
-    for (const p of filtered) {
-      const section = deriveSectionName(p.category);
-      grouped.set(section, [...(grouped.get(section) ?? []), p]);
-    }
-    for (const items of grouped.values()) items.sort((a, b) => a.name.localeCompare(b.name));
-    return Array.from(grouped.entries()).sort(([a], [b]) => {
-      const rankDiff = sectionRank(a) - sectionRank(b);
-      return rankDiff !== 0 ? rankDiff : a.localeCompare(b);
-    });
-  }, [filtered]);
 
   if (loading) return <p className="muted">Loading…</p>;
   if (error) return <p className="muted">Error: {error}</p>;
@@ -79,7 +57,6 @@ export default function QueuePage() {
           <option value="all">All statuses</option>
           <option value="queue">Queue</option>
           <option value="in_progress">In progress</option>
-          <option value="completed">Completed</option>
           <option value="frogged">Frogged</option>
         </select>
         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
@@ -111,39 +88,7 @@ export default function QueuePage() {
         </select>
       </div>
 
-      {filtered.length === 0 && <p className="muted">No projects yet — add one.</p>}
-
-      {sections.map(([section, items]) => (
-        <div key={section} className="section">
-          <h2>
-            {section} ({items.length})
-          </h2>
-          <div className="grid">
-            {items.map((p) => (
-              <Link key={p.id} to={`/projects/${p.id}`} className="card">
-                {p.imagePath && <img src={p.imagePath} alt={p.name} />}
-                <div className="body">
-                  <div className="name">{p.name}</div>
-                  <div className="meta">{[p.craft, p.designer].filter(Boolean).join(' · ')}</div>
-                  <div>
-                    <span className="badge">{p.status.replace('_', ' ')}</span>
-                    <span className={`badge ${p.patternStatus === 'have' ? 'good' : ''}`}>
-                      {p.patternStatus === 'have' ? 'pattern: have' : 'pattern: need to buy'}
-                    </span>
-                    {p.weightClass != null && <span className="badge">{weightClassLabel(p.weightClass)}</span>}
-                    {p.needsReview && <span className="badge bad">needs fixing</span>}
-                    {p.hasYardageMatch != null && (
-                      <span className={`badge ${p.hasYardageMatch ? 'good' : 'bad'}`}>
-                        {p.hasYardageMatch ? 'yarn: possible' : 'yarn: short'}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </div>
-      ))}
+      <ProjectSections projects={filtered} />
     </div>
   );
 }
