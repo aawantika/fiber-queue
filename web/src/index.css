@@ -74,6 +74,20 @@ h2 { font-size: 16px; margin: 0 0 8px; }
   line-height: 1;
 }
 
+a.button {
+  display: inline-block;
+  text-decoration: none;
+  cursor: pointer;
+  background: var(--accent);
+  color: white;
+  border: 1px solid transparent;
+  font-weight: 600;
+  font-size: 13px;
+  padding: 6px 8px;
+  border-radius: 6px;
+  line-height: 1.4;
+}
+
 select, input, textarea, button {
   font-family: inherit;
   font-size: 13px;

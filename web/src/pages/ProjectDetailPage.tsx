@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { deleteProject, getProject, refreshProjectFromRavelry, updateProject } from '../api/client';
+import { deleteProject, getProject, getProjects, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
 import { deriveSectionName } from '../section';
 import { WEIGHT_CLASS_OPTIONS, weightClassLabel } from '../weightClass';
@@ -64,6 +64,16 @@ export default function ProjectDetailPage() {
   const [imageSaving, setImageSaving] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [knownCategories, setKnownCategories] = useState<string[]>([]);
+
+  useEffect(() => {
+    getProjects()
+      .then((all) => {
+        const names = Array.from(new Set(all.map((p) => deriveSectionName(p.category)))).sort((a, b) => a.localeCompare(b));
+        setKnownCategories(names);
+      })
+      .catch(() => {});
+  }, []);
 
   // Category is stored as the short derived section name going forward —
   // Ravelry-sourced projects still carry their full "Categories > Clothing >
@@ -234,7 +244,18 @@ export default function ProjectDetailPage() {
             <>
               <div className="spec-row">
                 <span className="label">Category</span>
-                <input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Cardigan, Socks, ..." style={{ textAlign: 'right' }} />
+                <input
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Cardigan, Socks, ..."
+                  list="category-options"
+                  style={{ textAlign: 'right' }}
+                />
+                <datalist id="category-options">
+                  {knownCategories.map((c) => (
+                    <option key={c} value={c} />
+                  ))}
+                </datalist>
               </div>
               <div className="spec-row">
                 <span className="label">Craft</span>
