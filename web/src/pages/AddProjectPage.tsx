@@ -95,6 +95,7 @@ export default function AddProjectPage() {
               <option value="">—</option>
               <option value="Knitting">Knitting</option>
               <option value="Crochet">Crochet</option>
+              <option value="Tunisian">Tunisian</option>
               <option value="Both">Both</option>
             </select>
           </label>

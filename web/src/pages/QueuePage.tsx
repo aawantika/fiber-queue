@@ -12,6 +12,7 @@ export default function QueuePage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [craftFilter, setCraftFilter] = useState('all');
+  const [designerFilter, setDesignerFilter] = useState('all');
 
   useEffect(() => {
     getProjects()
@@ -21,11 +22,15 @@ export default function QueuePage() {
   }, []);
 
   const categories = useMemo(
-    () => Array.from(new Set(projects.map((p) => deriveSectionName(p.category)))).sort(),
+    () => Array.from(new Set(projects.map((p) => deriveSectionName(p.category)))).sort((a, b) => a.localeCompare(b)),
     [projects]
   );
   const crafts = useMemo(
     () => Array.from(new Set(projects.map((p) => p.craft).filter(Boolean))) as string[],
+    [projects]
+  );
+  const designers = useMemo(
+    () => (Array.from(new Set(projects.map((p) => p.designer).filter(Boolean))) as string[]).sort((a, b) => a.localeCompare(b)),
     [projects]
   );
 
@@ -33,6 +38,7 @@ export default function QueuePage() {
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
     if (categoryFilter !== 'all' && deriveSectionName(p.category) !== categoryFilter) return false;
     if (craftFilter !== 'all' && p.craft !== craftFilter) return false;
+    if (designerFilter !== 'all' && p.designer !== designerFilter) return false;
     return true;
   });
 
@@ -76,6 +82,14 @@ export default function QueuePage() {
             </option>
           ))}
         </select>
+        <select value={designerFilter} onChange={(e) => setDesignerFilter(e.target.value)}>
+          <option value="all">All designers</option>
+          {designers.map((d) => (
+            <option key={d} value={d}>
+              {d}
+            </option>
+          ))}
+        </select>
       </div>
 
       {filtered.length === 0 && <p className="muted">No projects yet — add one.</p>}
@@ -91,7 +105,7 @@ export default function QueuePage() {
                 {p.imagePath && <img src={p.imagePath} alt={p.name} />}
                 <div className="body">
                   <div className="name">{p.name}</div>
-                  <div className="meta">{p.craft ?? ''}</div>
+                  <div className="meta">{[p.craft, p.designer].filter(Boolean).join(' · ')}</div>
                   <div>
                     <span className="badge">{p.status.replace('_', ' ')}</span>
                     <span className={`badge ${p.patternStatus === 'have' ? 'good' : ''}`}>

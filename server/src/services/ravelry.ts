@@ -57,6 +57,12 @@ export async function fetchProjectFromRavelryUrl(ravelryUrl: string): Promise<Pr
   const needles = (pattern.pattern_needle_sizes ?? []).filter((s: any) => s.knitting);
   const hooks = (pattern.pattern_needle_sizes ?? []).filter((s: any) => s.crochet);
 
+  // Ravelry files Tunisian crochet under craft "Crochet" with no separate
+  // craft value — the only signal is a "tunisian" entry in pattern_attributes
+  // (tags), so it has to be special-cased rather than read off craft.name.
+  const isTunisian = (pattern.pattern_attributes ?? []).some((a: any) => a.permalink === 'tunisian');
+  const craft = isTunisian ? 'Tunisian' : pattern.craft?.name ?? null;
+
   const categories: string[] = Array.from(
     new Set((pattern.pattern_categories ?? []).map((c: any) => deriveSectionName(categoryPath(c))).filter(Boolean))
   ) as string[];
@@ -88,7 +94,7 @@ export async function fetchProjectFromRavelryUrl(ravelryUrl: string): Promise<Pr
   return {
     name: pattern.name,
     category: categories.join('; ') || null,
-    craft: pattern.craft?.name ?? null,
+    craft,
     designer: pattern.pattern_author?.name ?? pattern.designer?.name ?? null,
     status: 'queue',
     patternStatus: 'need_to_buy',
