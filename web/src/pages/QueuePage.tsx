@@ -84,6 +84,7 @@ export default function QueuePage() {
           <option value="all">All projects</option>
           <option value="have">Pattern: have</option>
           <option value="need_to_buy">Pattern: need to buy</option>
+          <option value="free">Pattern: free</option>
         </select>
         <select
           value={designerFilter}

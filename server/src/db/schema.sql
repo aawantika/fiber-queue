@@ -29,7 +29,7 @@ CREATE TABLE IF NOT EXISTS projects (
   craft TEXT,
   designer TEXT,
   status TEXT NOT NULL DEFAULT 'queue' CHECK (status IN ('queue', 'in_progress', 'completed', 'frogged')),
-  pattern_status TEXT NOT NULL DEFAULT 'need_to_buy' CHECK (pattern_status IN ('have', 'need_to_buy')),
+  pattern_status TEXT NOT NULL DEFAULT 'need_to_buy' CHECK (pattern_status IN ('have', 'need_to_buy', 'free')),
   pattern_free INTEGER NOT NULL DEFAULT 0,
   -- For entries pulled in from scattered notes (no Ravelry page to verify
   -- against) with missing/guessed specs that need a human to confirm.

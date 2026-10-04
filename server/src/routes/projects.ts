@@ -20,7 +20,7 @@ const manualProjectSchema = z.object({
   craft: z.string().nullable().optional(),
   designer: z.string().nullable().optional(),
   status: z.enum(['queue', 'in_progress', 'completed', 'frogged']).default('queue'),
-  patternStatus: z.enum(['have', 'need_to_buy']).default('need_to_buy'),
+  patternStatus: z.enum(['have', 'need_to_buy', 'free']).default('need_to_buy'),
   patternFree: z.boolean().default(false),
   needsReview: z.boolean().default(false),
   yardageMin: z.number().nullable().optional(),
@@ -148,7 +148,10 @@ projectsRouter.put('/:id', async (req, res) => {
 // Re-pulls spec fields (yardage, weight, needle/hook sizes, gauge, photo...)
 // from Ravelry without disturbing what's yours: status, pattern_status,
 // notes, yardage_by_size, and yarn_components (per-strand yardage you filled
-// in by hand) survive the refresh untouched.
+// in by hand) survive the refresh untouched. The one exception: pattern_status
+// upgrades from the default need_to_buy to free if Ravelry now says the
+// pattern is free — never downgrades an explicit "have", never overwrites
+// an already-set "free".
 projectsRouter.post('/:id/refresh', async (req, res) => {
   const id = Number(req.params.id);
   const existing = getProjectById(id);
@@ -157,10 +160,12 @@ projectsRouter.post('/:id/refresh', async (req, res) => {
 
   try {
     const fresh = await fetchProjectFromRavelryUrl(existing.ravelryUrl);
+    const patternStatus =
+      existing.patternStatus === 'need_to_buy' && fresh.patternStatus === 'free' ? 'free' : existing.patternStatus;
     const input = fillDefaults({
       ...fresh,
       status: existing.status,
-      patternStatus: existing.patternStatus,
+      patternStatus,
       notes: existing.notes,
       yardageBySize: existing.yardageBySize,
       yarnComponents: existing.yarnComponents ?? fresh.yarnComponents

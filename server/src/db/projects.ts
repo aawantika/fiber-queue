@@ -6,7 +6,7 @@ export interface ProjectInput {
   craft: string | null;
   designer: string | null;
   status: 'queue' | 'in_progress' | 'completed' | 'frogged';
-  patternStatus: 'have' | 'need_to_buy';
+  patternStatus: 'have' | 'need_to_buy' | 'free';
   patternFree: boolean;
   needsReview: boolean;
   ravelryId: number | null;

@@ -232,13 +232,13 @@ export default function ProjectDetailPage() {
             <select value={project.patternStatus} onChange={(e) => patch({ patternStatus: e.target.value as any })}>
               <option value="have">Have it</option>
               <option value="need_to_buy">Need to buy</option>
+              <option value="free">Free</option>
             </select>
           </div>
           <div className="spec-row">
             <span className="label">Needs fixing</span>
             <input type="checkbox" checked={project.needsReview} onChange={(e) => patch({ needsReview: e.target.checked })} />
           </div>
-          {project.patternFree && <div className="spec-row"><span className="label">Free pattern</span><span>yes</span></div>}
 
           {editing ? (
             <>

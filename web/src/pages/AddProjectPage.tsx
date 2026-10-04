@@ -182,6 +182,7 @@ export default function AddProjectPage() {
             <select value={manual.patternStatus} onChange={(e) => field('patternStatus', e.target.value as any)}>
               <option value="have">Have it</option>
               <option value="need_to_buy">Need to buy</option>
+              <option value="free">Free</option>
             </select>
           </label>
           <label className="full">

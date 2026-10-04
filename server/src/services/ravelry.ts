@@ -97,7 +97,7 @@ export async function fetchProjectFromRavelryUrl(ravelryUrl: string): Promise<Pr
     craft,
     designer: pattern.pattern_author?.name ?? pattern.designer?.name ?? null,
     status: 'queue',
-    patternStatus: 'need_to_buy',
+    patternStatus: pattern.free ? 'free' : 'need_to_buy',
     patternFree: Boolean(pattern.free),
     needsReview: false,
     ravelryId: pattern.id,

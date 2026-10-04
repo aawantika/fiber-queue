@@ -1,5 +1,5 @@
 export type ProjectStatus = 'queue' | 'in_progress' | 'completed' | 'frogged';
-export type PatternStatus = 'have' | 'need_to_buy';
+export type PatternStatus = 'have' | 'need_to_buy' | 'free';
 
 export interface Project {
   id: number;
