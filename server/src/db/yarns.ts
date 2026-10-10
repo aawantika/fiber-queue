@@ -54,6 +54,53 @@ export function listYarnsByWeightClass(weightClass: number): Yarn[] {
   return rows.map(rowToYarn);
 }
 
+export interface YarnGroup {
+  brand: string;
+  colorName: string | null;
+  color: string | null;
+  weightLabel: string | null;
+  weightClass: number | null;
+  fiber: string | null;
+  totalYards: number;
+  totalGrams: number;
+  yarnIds: number[];
+}
+
+// Same-colorway stash rows pooled together — the sheet logs separate
+// purchases/skeins of the same brand+colorway as separate rows, but a
+// project draws on all of them as one pile of yarn. Shared by the
+// per-project weight-class matching and the "what can I make with this"
+// reverse lookup, so both see the same pools.
+export function groupYarns(yarns: Yarn[]): YarnGroup[] {
+  const groups = new Map<string, YarnGroup>();
+  for (const yarn of yarns) {
+    const key = `${yarn.brand}::${yarn.colorName ?? ''}`;
+    const existing = groups.get(key);
+    if (existing) {
+      existing.totalYards += yarn.yards ?? 0;
+      existing.totalGrams += yarn.grams ?? 0;
+      existing.yarnIds.push(yarn.id);
+    } else {
+      groups.set(key, {
+        brand: yarn.brand,
+        colorName: yarn.colorName,
+        color: yarn.color,
+        weightLabel: yarn.weightLabel,
+        weightClass: yarn.weightClass,
+        fiber: yarn.fiber,
+        totalYards: yarn.yards ?? 0,
+        totalGrams: yarn.grams ?? 0,
+        yarnIds: [yarn.id]
+      });
+    }
+  }
+  return Array.from(groups.values());
+}
+
+export function listYarnGroups(): YarnGroup[] {
+  return groupYarns(listYarns());
+}
+
 // Full replace on every sync: the sheet is the source of truth for the
 // inventory, and there's no stable natural key across edits (colors get
 // renamed, rows get reordered) to make upserting safe.

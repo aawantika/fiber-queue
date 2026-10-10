@@ -80,6 +80,48 @@ export interface Yarn {
   sourceUrl: string | null;
 }
 
+export interface YarnGroup {
+  brand: string;
+  colorName: string | null;
+  color: string | null;
+  weightLabel: string | null;
+  weightClass: number | null;
+  fiber: string | null;
+  totalYards: number;
+  totalGrams: number;
+  yarnIds: number[];
+}
+
+export interface SelectedGroupInput {
+  brand: string;
+  colorName: string | null;
+  weightClass: number | null;
+  totalYards: number;
+}
+
+export interface SoloProjectMatch {
+  project: Project;
+  availableYards: number;
+  meetsMin: boolean | null;
+  meetsMax: boolean | null;
+}
+
+export interface HeldTogetherComponentResult extends YarnComponent {
+  availableYards: number;
+  meetsMin: boolean | null;
+}
+
+export interface HeldTogetherProjectMatch {
+  project: Project;
+  components: HeldTogetherComponentResult[];
+}
+
+export interface SelectionMatchResult {
+  yardsByWeightClass: Record<number, number>;
+  soloMatches: SoloProjectMatch[];
+  heldTogetherMatches: HeldTogetherProjectMatch[];
+}
+
 export interface ManualProjectInput {
   name: string;
   category?: string | null;

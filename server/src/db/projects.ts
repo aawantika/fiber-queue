@@ -81,6 +81,11 @@ export function getProjectById(id: number): Project | null {
   return row ? rowToProject(row) : null;
 }
 
+export function getProjectByRavelryId(ravelryId: number): Project | null {
+  const row = db.prepare('SELECT * FROM projects WHERE ravelry_id = ?').get(ravelryId);
+  return row ? rowToProject(row) : null;
+}
+
 const INSERT_COLUMNS = `
   name, category, craft, designer, status, pattern_status, pattern_free, needs_review, ravelry_id, ravelry_permalink, ravelry_url, pattern_url,
   yardage_min, yardage_max, yardage_by_size, sizes_available, weight_label, weight_class,

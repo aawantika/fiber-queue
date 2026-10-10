@@ -1,4 +1,4 @@
-import { ManualProjectInput, Project, ProjectDetail, Yarn } from './types';
+import { ManualProjectInput, Project, ProjectDetail, SelectedGroupInput, SelectionMatchResult, Yarn, YarnGroup } from './types';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -58,4 +58,12 @@ export function syncYarns(): Promise<{ imported: number }> {
 
 export function getYarnSheetUrl(): Promise<{ url: string | null }> {
   return request<{ url: string | null }>('/yarns/sheet-url');
+}
+
+export function getYarnGroups(): Promise<YarnGroup[]> {
+  return request<YarnGroup[]>('/yarns/groups');
+}
+
+export function matchYarnSelection(groups: SelectedGroupInput[]): Promise<SelectionMatchResult> {
+  return request<SelectionMatchResult>('/yarns/match', { method: 'POST', body: JSON.stringify({ groups }) });
 }

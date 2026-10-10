@@ -4,13 +4,14 @@ import {
   createProject,
   deleteProject,
   getProjectById,
+  getProjectByRavelryId,
   listProjects,
   updateProject,
   type ProjectInput
 } from '../db/projects.js';
 import { downloadImageFor } from '../services/images.js';
 import { matchYarnComponents, matchYarnsForProject } from '../services/matching.js';
-import { fetchProjectFromRavelryUrl } from '../services/ravelry.js';
+import { fetchProjectFromRavelryUrl, resolvePatternId } from '../services/ravelry.js';
 
 export const projectsRouter = Router();
 
@@ -97,6 +98,15 @@ projectsRouter.post('/', async (req, res) => {
 
   if (asRavelry.success) {
     try {
+      const ravelryId = await resolvePatternId(asRavelry.data.ravelryUrl);
+      const existing = getProjectByRavelryId(ravelryId);
+      if (existing) {
+        return res.status(409).json({
+          error: `Already in your queue as "${existing.name}"`,
+          existingProjectId: existing.id
+        });
+      }
+
       const input = await fetchProjectFromRavelryUrl(asRavelry.data.ravelryUrl);
       return res.status(201).json(createProject(input));
     } catch (err) {

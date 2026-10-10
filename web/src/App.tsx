@@ -4,6 +4,7 @@ import CompletedPage from './pages/CompletedPage';
 import AddProjectPage from './pages/AddProjectPage';
 import ProjectDetailPage from './pages/ProjectDetailPage';
 import YarnInventoryPage from './pages/YarnInventoryPage';
+import MatchPage from './pages/MatchPage';
 
 export default function App() {
   return (
@@ -21,6 +22,9 @@ export default function App() {
         <NavLink to="/yarn" className={({ isActive }) => (isActive ? 'active' : '')}>
           Yarn inventory
         </NavLink>
+        <NavLink to="/match" className={({ isActive }) => (isActive ? 'active' : '')}>
+          What can I make?
+        </NavLink>
       </nav>
       <Routes>
         <Route path="/" element={<QueuePage />} />
@@ -28,6 +32,7 @@ export default function App() {
         <Route path="/add" element={<AddProjectPage />} />
         <Route path="/projects/:id" element={<ProjectDetailPage />} />
         <Route path="/yarn" element={<YarnInventoryPage />} />
+        <Route path="/match" element={<MatchPage />} />
       </Routes>
     </div>
   );
