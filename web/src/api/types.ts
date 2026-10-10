@@ -103,6 +103,7 @@ export interface YarnGroup {
   totalGrams: number;
   yarnIds: number[];
   note: YarnNote | null;
+  autoSuggestion: string | null;
 }
 
 export interface SelectedGroupInput {

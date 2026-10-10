@@ -96,10 +96,16 @@ export default function MatchPage() {
                       <div>
                         {g.brand} {g.colorName ?? g.color ?? ''}
                       </div>
-                      {g.note && (
+                      {g.note ? (
                         <div className="muted" style={{ fontSize: 12 }}>
                           {g.note.note}
                         </div>
+                      ) : (
+                        g.autoSuggestion && (
+                          <div className="muted" style={{ fontSize: 12 }}>
+                            {g.autoSuggestion} (auto)
+                          </div>
+                        )
                       )}
                     </span>
                   </span>

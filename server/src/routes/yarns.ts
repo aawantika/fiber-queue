@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { z } from 'zod';
 import { listYarnGroups, listYarns } from '../db/yarns.js';
 import { deleteYarnNote, findNoteFor, listYarnNotes, upsertYarnNote } from '../db/yarnNotes.js';
+import { deriveFiberSuggestion } from '../services/fiberCharacteristics.js';
 import { matchSelectionToProjects } from '../services/matching.js';
 import { syncYarnSheet } from '../services/yarnSheet.js';
 
@@ -15,7 +16,8 @@ yarnsRouter.get('/groups', (_req, res) => {
   const notes = listYarnNotes();
   const groups = listYarnGroups().map((g) => ({
     ...g,
-    note: findNoteFor(notes, g.brand, g.colorName)
+    note: findNoteFor(notes, g.brand, g.colorName),
+    autoSuggestion: deriveFiberSuggestion(g.fiber, g.weightClass)
   }));
   res.json(groups);
 });

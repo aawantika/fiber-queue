@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { deleteYarnNote, getYarnNotes, getYarnSheetUrl, getYarns, saveYarnNote, syncYarns } from '../api/client';
 import { Yarn, YarnNote } from '../api/types';
+import { deriveFiberSuggestion } from '../fiberCharacteristics';
 import { weightClassLabel } from '../weightClass';
 
 function findNote(notes: YarnNote[], brand: string, colorName: string | null): YarnNote | null {
@@ -151,7 +152,10 @@ export default function YarnInventoryPage() {
                     </div>
                   ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <span className="muted">{note?.note ?? '—'}</span>
+                      <span className="muted">
+                        {note?.note ?? deriveFiberSuggestion(y.fiber, y.weightClass) ?? '—'}
+                        {!note && deriveFiberSuggestion(y.fiber, y.weightClass) && ' (auto)'}
+                      </span>
                       <button className="secondary" onClick={() => startEdit(y)}>
                         {note ? 'Edit' : '+ Add'}
                       </button>
