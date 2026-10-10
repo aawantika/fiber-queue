@@ -58,6 +58,21 @@ nav.main-nav a.active {
   border-bottom: 2px solid var(--accent);
 }
 
+/* More specific than the plain `nav.main-nav a` rule above, so the
+   "+ Add project" tab keeps its button look instead of the muted-text
+   nav-link styling. */
+nav.main-nav a.button {
+  color: white;
+  background: var(--accent);
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+nav.main-nav a.button.active {
+  border-bottom: 2px solid transparent;
+}
+
 h1 { font-size: 20px; margin: 0 0 16px; }
 h2 { font-size: 16px; margin: 0 0 8px; }
 

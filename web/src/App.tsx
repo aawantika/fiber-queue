@@ -16,8 +16,8 @@ export default function App() {
         <NavLink to="/completed" className={({ isActive }) => (isActive ? 'active' : '')}>
           Completed
         </NavLink>
-        <NavLink to="/add" className={({ isActive }) => (isActive ? 'active' : '')}>
-          Add project
+        <NavLink to="/add" className={({ isActive }) => `button${isActive ? ' active' : ''}`}>
+          + Add project
         </NavLink>
         <NavLink to="/yarn" className={({ isActive }) => (isActive ? 'active' : '')}>
           Yarn inventory
