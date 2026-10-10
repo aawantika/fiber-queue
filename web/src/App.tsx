@@ -16,14 +16,14 @@ export default function App() {
         <NavLink to="/completed" className={({ isActive }) => (isActive ? 'active' : '')}>
           Completed
         </NavLink>
-        <NavLink to="/add" className={({ isActive }) => `button${isActive ? ' active' : ''}`}>
-          + Add project
-        </NavLink>
         <NavLink to="/yarn" className={({ isActive }) => (isActive ? 'active' : '')}>
           Yarn inventory
         </NavLink>
         <NavLink to="/match" className={({ isActive }) => (isActive ? 'active' : '')}>
           What can I make?
+        </NavLink>
+        <NavLink to="/add" className={({ isActive }) => `button${isActive ? ' active' : ''}`} style={{ marginLeft: 'auto' }}>
+          + Add project
         </NavLink>
       </nav>
       <Routes>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { useSearchParams } from 'react-router-dom';
 import { getProjects } from '../api/client';
 import ProjectSections from '../components/ProjectSections';
 import { Project } from '../api/types';
@@ -64,9 +64,6 @@ export default function QueuePage() {
     <div>
       <h1>Queue ({filtered.length})</h1>
       <div className="filters">
-        <Link to="/add" className="button">
-          + Add project
-        </Link>
         <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
           <option value="all">All statuses</option>
           <option value="queue">Queue</option>
