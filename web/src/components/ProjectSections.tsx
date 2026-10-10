@@ -55,6 +55,7 @@ export default function ProjectSections({ projects }: { projects: Project[] }) {
                   {(p.weightClass != null || p.hasYardageMatch != null) && (
                     <div style={{ whiteSpace: 'nowrap' }}>
                       {p.weightClass != null && <span className="badge">{weightClassLabel(p.weightClass)}</span>}
+                      {p.breathability && p.breathability !== 'neutral' && <span className="badge">{p.breathability}</span>}
                       {p.hasYardageMatch != null && (
                         <span className={`badge ${p.hasYardageMatch ? 'good' : 'bad'}`}>
                           {p.hasYardageMatch ? 'yarn: possible' : 'yarn: short'}

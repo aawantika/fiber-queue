@@ -1,5 +1,6 @@
 export type ProjectStatus = 'queue' | 'in_progress' | 'completed' | 'frogged';
 export type PatternStatus = 'have' | 'need_to_buy' | 'free';
+export type Breathability = 'airy' | 'dense' | 'neutral';
 
 export interface Project {
   id: number;
@@ -25,6 +26,7 @@ export interface Project {
   hookSizes: string | null;
   gauge: string | null;
   yarnComponents: string | null;
+  patternAttributes: string | null;
   suggestedYarn: string | null;
   published: string | null;
   imagePath: string | null;
@@ -34,6 +36,7 @@ export interface Project {
   updatedAt: string;
   bestMatchYards?: number;
   hasYardageMatch?: boolean | null;
+  breathability?: Breathability;
 }
 
 export interface YarnMatchGroup {
@@ -80,6 +83,15 @@ export interface Yarn {
   sourceUrl: string | null;
 }
 
+export interface YarnNote {
+  id: number;
+  brand: string;
+  colorName: string | null;
+  note: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface YarnGroup {
   brand: string;
   colorName: string | null;
@@ -90,6 +102,7 @@ export interface YarnGroup {
   totalYards: number;
   totalGrams: number;
   yarnIds: number[];
+  note: YarnNote | null;
 }
 
 export interface SelectedGroupInput {

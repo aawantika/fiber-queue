@@ -23,6 +23,7 @@ export interface ProjectInput {
   hookSizes: string | null;
   gauge: string | null;
   yarnComponents: string | null;
+  patternAttributes: string | null;
   suggestedYarn: string | null;
   published: string | null;
   imagePath: string | null;
@@ -61,6 +62,7 @@ function rowToProject(row: any): Project {
     hookSizes: row.hook_sizes,
     gauge: row.gauge,
     yarnComponents: row.yarn_components,
+    patternAttributes: row.pattern_attributes,
     suggestedYarn: row.suggested_yarn,
     published: row.published,
     imagePath: row.image_path,
@@ -89,13 +91,13 @@ export function getProjectByRavelryId(ravelryId: number): Project | null {
 const INSERT_COLUMNS = `
   name, category, craft, designer, status, pattern_status, pattern_free, needs_review, ravelry_id, ravelry_permalink, ravelry_url, pattern_url,
   yardage_min, yardage_max, yardage_by_size, sizes_available, weight_label, weight_class,
-  needle_sizes, hook_sizes, gauge, yarn_components, suggested_yarn, published, image_path, image_source_url, notes
+  needle_sizes, hook_sizes, gauge, yarn_components, pattern_attributes, suggested_yarn, published, image_path, image_source_url, notes
 `;
 
 const INSERT_PARAMS = `
   @name, @category, @craft, @designer, @status, @patternStatus, @patternFree, @needsReview, @ravelryId, @ravelryPermalink, @ravelryUrl, @patternUrl,
   @yardageMin, @yardageMax, @yardageBySize, @sizesAvailable, @weightLabel, @weightClass,
-  @needleSizes, @hookSizes, @gauge, @yarnComponents, @suggestedYarn, @published, @imagePath, @imageSourceUrl, @notes
+  @needleSizes, @hookSizes, @gauge, @yarnComponents, @patternAttributes, @suggestedYarn, @published, @imagePath, @imageSourceUrl, @notes
 `;
 
 function toRow(input: ProjectInput) {
@@ -115,7 +117,8 @@ export function updateProject(id: number, input: ProjectInput): Project | null {
       ravelry_id = @ravelryId, ravelry_permalink = @ravelryPermalink, ravelry_url = @ravelryUrl, pattern_url = @patternUrl,
       yardage_min = @yardageMin, yardage_max = @yardageMax, yardage_by_size = @yardageBySize,
       sizes_available = @sizesAvailable, weight_label = @weightLabel, weight_class = @weightClass,
-      needle_sizes = @needleSizes, hook_sizes = @hookSizes, gauge = @gauge, yarn_components = @yarnComponents, suggested_yarn = @suggestedYarn,
+      needle_sizes = @needleSizes, hook_sizes = @hookSizes, gauge = @gauge, yarn_components = @yarnComponents,
+      pattern_attributes = @patternAttributes, suggested_yarn = @suggestedYarn,
       published = @published, image_path = @imagePath, image_source_url = @imageSourceUrl, notes = @notes,
       updated_at = datetime('now')
      WHERE id = @id`

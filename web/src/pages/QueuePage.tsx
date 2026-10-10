@@ -4,6 +4,7 @@ import { getProjects } from '../api/client';
 import ProjectSections from '../components/ProjectSections';
 import { Project } from '../api/types';
 import { deriveSectionName } from '../section';
+import { weightClassLabel } from '../weightClass';
 
 export default function QueuePage() {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -13,6 +14,8 @@ export default function QueuePage() {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [craftFilter, setCraftFilter] = useState('all');
   const [patternStatusFilter, setPatternStatusFilter] = useState('all');
+  const [weightFilter, setWeightFilter] = useState('all');
+  const [breathabilityFilter, setBreathabilityFilter] = useState('all');
   const [searchParams, setSearchParams] = useSearchParams();
   const designerFilter = searchParams.get('designer') ?? 'all';
 
@@ -38,6 +41,10 @@ export default function QueuePage() {
     () => (Array.from(new Set(active.map((p) => p.designer).filter(Boolean))) as string[]).sort((a, b) => a.localeCompare(b)),
     [active]
   );
+  const weightClasses = useMemo(
+    () => Array.from(new Set(active.map((p) => p.weightClass).filter((w): w is number => w != null))).sort((a, b) => a - b),
+    [active]
+  );
 
   const filtered = active.filter((p) => {
     if (statusFilter !== 'all' && p.status !== statusFilter) return false;
@@ -45,6 +52,8 @@ export default function QueuePage() {
     if (craftFilter !== 'all' && p.craft !== craftFilter) return false;
     if (patternStatusFilter !== 'all' && p.patternStatus !== patternStatusFilter) return false;
     if (designerFilter !== 'all' && p.designer !== designerFilter) return false;
+    if (weightFilter !== 'all' && String(p.weightClass) !== weightFilter) return false;
+    if (breathabilityFilter !== 'all' && p.breathability !== breathabilityFilter) return false;
     return true;
   });
 
@@ -79,6 +88,20 @@ export default function QueuePage() {
               {c}
             </option>
           ))}
+        </select>
+        <select value={weightFilter} onChange={(e) => setWeightFilter(e.target.value)}>
+          <option value="all">All weights</option>
+          {weightClasses.map((w) => (
+            <option key={w} value={w}>
+              {weightClassLabel(w)}
+            </option>
+          ))}
+        </select>
+        <select value={breathabilityFilter} onChange={(e) => setBreathabilityFilter(e.target.value)}>
+          <option value="all">Airy / dense: any</option>
+          <option value="airy">Airy</option>
+          <option value="dense">Dense</option>
+          <option value="neutral">Neutral</option>
         </select>
         <select value={patternStatusFilter} onChange={(e) => setPatternStatusFilter(e.target.value)}>
           <option value="all">All projects</option>

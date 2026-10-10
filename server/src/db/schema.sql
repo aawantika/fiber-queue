@@ -20,6 +20,22 @@ CREATE TABLE IF NOT EXISTS yarns (
 
 CREATE INDEX IF NOT EXISTS idx_yarns_weight_class ON yarns(weight_class);
 
+-- Lives apart from `yarns` on purpose: replaceAllYarns() does a full
+-- DELETE+reinsert on every sheet sync, which would wipe any note stored on
+-- the yarns table itself. Keyed by brand (+ optional color_name for a
+-- colorway-specific note, overriding a brand-wide one) so it survives
+-- resyncs regardless of row churn.
+CREATE TABLE IF NOT EXISTS yarn_notes (
+  id INTEGER PRIMARY KEY,
+  brand TEXT NOT NULL,
+  color_name TEXT,
+  note TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX IF NOT EXISTS idx_yarn_notes_brand ON yarn_notes(brand, color_name);
+
 -- A project is one queue entry: either pulled from a Ravelry pattern link
 -- (ravelry_id set, specs/image come from the API) or added manually.
 CREATE TABLE IF NOT EXISTS projects (
@@ -63,6 +79,11 @@ CREATE TABLE IF NOT EXISTS projects (
   -- `packs` array reliably gives weight per strand; per-strand yardage is
   -- usually only in free-text materials, so it's filled in by hand.
   yarn_components TEXT,
+  -- Raw tag permalinks from Ravelry's pattern_attributes (e.g. "lace",
+  -- "cables", "sleeveless", "long-sleeve") — JSON array. Captured so
+  -- breathability (see weightClass.ts-style derivation in the app layer)
+  -- and future filters aren't limited to what we thought to hardcode now.
+  pattern_attributes TEXT,
   suggested_yarn TEXT,
   published TEXT,
   image_path TEXT,

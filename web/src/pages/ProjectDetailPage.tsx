@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import { deleteProject, getProject, getProjects, refreshProjectFromRavelry, updateProject } from '../api/client';
 import { ProjectDetail, YarnComponent, YarnMatchGroup } from '../api/types';
 import { deriveSectionName } from '../section';
+import { parsePatternAttributes } from '../breathability';
 import { WEIGHT_CLASS_OPTIONS, weightClassLabel } from '../weightClass';
 
 function MatchTable({ matches }: { matches: YarnMatchGroup[] }) {
@@ -334,6 +335,18 @@ export default function ProjectDetailPage() {
                 </span>
               </div>
               <div className="spec-row"><span className="label">Weight</span><span>{weightClassLabel(project.weightClass)} {project.weightLabel ? `(${project.weightLabel})` : ''}</span></div>
+              {project.breathability && (
+                <div className="spec-row">
+                  <span className="label">Airy / dense</span>
+                  <span>{project.breathability}</span>
+                </div>
+              )}
+              {parsePatternAttributes(project.patternAttributes).length > 0 && (
+                <div className="spec-row">
+                  <span className="label">Tags</span>
+                  <span>{parsePatternAttributes(project.patternAttributes).join(', ')}</span>
+                </div>
+              )}
               <div className="spec-row"><span className="label">Yardage</span><span>{project.yardageMin ?? '?'}–{project.yardageMax ?? '?'} yd</span></div>
               <div className="spec-row"><span className="label">Sizes available</span><span>{project.sizesAvailable ?? '—'}</span></div>
               <div className="spec-row"><span className="label">Needle size(s)</span><span>{project.needleSizes ?? '—'}</span></div>

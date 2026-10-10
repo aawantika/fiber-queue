@@ -1,4 +1,13 @@
-import { ManualProjectInput, Project, ProjectDetail, SelectedGroupInput, SelectionMatchResult, Yarn, YarnGroup } from './types';
+import {
+  ManualProjectInput,
+  Project,
+  ProjectDetail,
+  SelectedGroupInput,
+  SelectionMatchResult,
+  Yarn,
+  YarnGroup,
+  YarnNote
+} from './types';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`/api${path}`, {
@@ -66,4 +75,16 @@ export function getYarnGroups(): Promise<YarnGroup[]> {
 
 export function matchYarnSelection(groups: SelectedGroupInput[]): Promise<SelectionMatchResult> {
   return request<SelectionMatchResult>('/yarns/match', { method: 'POST', body: JSON.stringify({ groups }) });
+}
+
+export function getYarnNotes(): Promise<YarnNote[]> {
+  return request<YarnNote[]>('/yarns/notes');
+}
+
+export function saveYarnNote(brand: string, colorName: string | null, note: string): Promise<YarnNote> {
+  return request<YarnNote>('/yarns/notes', { method: 'PUT', body: JSON.stringify({ brand, colorName, note }) });
+}
+
+export function deleteYarnNote(id: number): Promise<void> {
+  return request<void>(`/yarns/notes/${id}`, { method: 'DELETE' });
 }

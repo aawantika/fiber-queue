@@ -9,6 +9,7 @@ import {
   updateProject,
   type ProjectInput
 } from '../db/projects.js';
+import { deriveBreathability, parsePatternAttributes } from '../services/breathability.js';
 import { downloadImageFor } from '../services/images.js';
 import { matchYarnComponents, matchYarnsForProject } from '../services/matching.js';
 import { fetchProjectFromRavelryUrl, resolvePatternId } from '../services/ravelry.js';
@@ -65,6 +66,7 @@ function fillDefaults(partial: Partial<ProjectInput>): ProjectInput {
     hookSizes: partial.hookSizes ?? null,
     gauge: partial.gauge ?? null,
     yarnComponents: partial.yarnComponents ?? null,
+    patternAttributes: partial.patternAttributes ?? null,
     suggestedYarn: partial.suggestedYarn ?? null,
     published: partial.published ?? null,
     imagePath: partial.imagePath ?? null,
@@ -78,7 +80,8 @@ projectsRouter.get('/', (_req, res) => {
     const matches = matchYarnsForProject(project);
     const bestMatchYards = matches.reduce((max, m) => Math.max(max, m.totalYards), 0);
     const hasYardageMatch = matches.some((m) => m.meetsMin !== false && m.meetsMax !== false);
-    return { ...project, bestMatchYards, hasYardageMatch: matches.length > 0 ? hasYardageMatch : null };
+    const breathability = deriveBreathability(parsePatternAttributes(project.patternAttributes), project.craft);
+    return { ...project, bestMatchYards, hasYardageMatch: matches.length > 0 ? hasYardageMatch : null, breathability };
   });
   res.json(projects);
 });
@@ -87,7 +90,13 @@ projectsRouter.get('/:id', (req, res) => {
   const id = Number(req.params.id);
   const project = getProjectById(id);
   if (!project) return res.status(404).json({ error: 'Project not found' });
-  res.json({ ...project, yarnMatches: matchYarnsForProject(project), componentMatches: matchYarnComponents(project) });
+  const breathability = deriveBreathability(parsePatternAttributes(project.patternAttributes), project.craft);
+  res.json({
+    ...project,
+    yarnMatches: matchYarnsForProject(project),
+    componentMatches: matchYarnComponents(project),
+    breathability
+  });
 });
 
 // Two ways in: { ravelryUrl } auto-fetches specs+photo from Ravelry; anything

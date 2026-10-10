@@ -89,12 +89,23 @@ export default function MatchPage() {
             <div key={weightClass ?? 'null'} className="section" style={{ marginTop: 12 }}>
               <h2>{weightClass != null ? weightClassLabel(weightClass) : 'Unknown weight'}</h2>
               {items.map((g) => (
-                <label key={groupKey(g)} className="spec-row" style={{ cursor: 'pointer' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <input type="checkbox" checked={selected.has(groupKey(g))} onChange={() => toggle(g)} />
-                    {g.brand} {g.colorName ?? g.color ?? ''}
+                <label key={groupKey(g)} className="spec-row" style={{ cursor: 'pointer', alignItems: 'flex-start' }}>
+                  <span style={{ flex: 1, minWidth: 0, display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                    <input type="checkbox" checked={selected.has(groupKey(g))} onChange={() => toggle(g)} style={{ flexShrink: 0, marginTop: 3 }} />
+                    <span style={{ minWidth: 0 }}>
+                      <div>
+                        {g.brand} {g.colorName ?? g.color ?? ''}
+                      </div>
+                      {g.note && (
+                        <div className="muted" style={{ fontSize: 12 }}>
+                          {g.note.note}
+                        </div>
+                      )}
+                    </span>
                   </span>
-                  <span className="muted">{Math.round(g.totalYards)} yd</span>
+                  <span className="muted" style={{ flexShrink: 0, marginLeft: 12 }}>
+                    {Math.round(g.totalYards)} yd
+                  </span>
                 </label>
               ))}
             </div>
